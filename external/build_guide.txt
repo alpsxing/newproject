@@ -1,0 +1,29 @@
+1. Sqlite:
+cd sqlite-autoconf-3090200
+./configure --prefix=<dir>
+make
+make install
+
+2. openssl:
+cd openssl-1.0.2d
+./Configure --prefix=<dir> linux-x86_64
+make
+make install
+
+3. boost:
+cd boost_1_59_0
+./bootstrap.sh
+./b2 --prefix=/home/xingqq/Documents/wifi_monitor/lib/boost install
+
+4. cpp-netlib
+cd cpp-netlib-0.11.2-final
+mkdir cpp-netlib-build
+cd cpp-netlib-build
+cmake -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_COMPILER=gcc \
+      -DCMAKE_CXX_COMPILER=g++ \
+      -DOPENSSL_ROOT_DIR=<openssl_dir> \
+      -DBOOST_ROOT=<boost_dir> \
+      -DCMAKE_INSTALL_PREFIX=<dir> \
+      ..
+
