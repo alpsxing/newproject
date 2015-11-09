@@ -217,14 +217,38 @@ int SingleRowTable::Commit()
         return -1;
     }
     
+    m_table.Close();
+
+    SendNotification();
+
     for(int i = 0; i < m_colnum; i ++)
     {
         m_dirty[i] = false;
     }
     
-    m_table.Close();
-    
     return 0;
+}
+
+void SingleRowTable::SendNotification()
+{
+	vector<int> changed;
+
+    for(int i = 0; i < m_colnum; i ++)
+    {
+        if(m_dirty[i] == false)
+        {
+            continue;
+        }
+
+        changed.push_back(i);
+    }
+
+    if(changed.size() <= 0)
+    	return;
+
+    CommonThreadLock thread_lock(&m_eventMutex);
+    if(m_eventHandler)
+    	m_eventHandler->FieldChangeEventHandler(changed);
 }
 
 ostream& operator <<(ostream& os, const SingleRowTable& table)
