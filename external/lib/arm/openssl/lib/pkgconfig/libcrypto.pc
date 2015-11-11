@@ -1,0 +1,12 @@
+prefix=/home/xingqq/new2/external/openssl-1.0.2d/../lib/arm/openssl
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: OpenSSL-libcrypto
+Description: OpenSSL cryptography library
+Version: 1.0.2d
+Requires: 
+Libs: -L${libdir} -lcrypto
+Libs.private: 
+Cflags: -I${includedir} 

@@ -1,3 +1,5 @@
+For x86-64:
+
 1. Sqlite:
 cd sqlite-autoconf-3090200
 ./configure --prefix=<dir>
@@ -23,6 +25,39 @@ export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
 cmake -DCMAKE_BUILD_TYPE=Debug \
       -DCMAKE_C_COMPILER=gcc \
       -DCMAKE_CXX_COMPILER=g++ \
+      -DBOOST_ROOT=<boost_dir> \
+      -DCMAKE_INSTALL_PREFIX=<dir> \
+      ..
+make
+make install
+
+For ARM:
+1. Sqlite:
+cd sqlite-autoconf-3090200
+./configure --prefix=<dir> --host=arm-linux-gnueabi
+make
+make install
+
+2. openssl:
+cd openssl-1.0.2d
+./Configure --prefix=<dir> shared os/compiler:arm-linux-gnueabi-gcc
+make
+make install
+
+3. boost:
+cd boost_1_59_0
+export BOOST_BUILD_USER_CONFIG=tools/build/v2/user-config.jam
+./bootstrap.sh
+./b2 toolset=gcc-arm install --prefix=<dir>
+
+4. cpp-netlib
+cd cpp-netlib-0.11.2-final
+mkdir cpp-netlib-build
+cd cpp-netlib-build
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
+cmake -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_COMPILER=arm-linux-gnueabi-gcc \
+      -DCMAKE_CXX_COMPILER=arm-linux-gnueabi-g++ \
       -DBOOST_ROOT=<boost_dir> \
       -DCMAKE_INSTALL_PREFIX=<dir> \
       ..

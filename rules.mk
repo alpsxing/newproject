@@ -15,7 +15,11 @@ CURRENT_DIR = $(shell pwd)
 ifeq ($(ARCH), x86_64)
 CC=gcc
 else
+ifeq ($(ARCH), arm)
+CC=arm-linux-gnueabi-gcc
+else
 $(error $(ARCH) is not supported yet.)
+endif
 endif
 
 SOURCE_DIR = $(BASE_DIR)/src
@@ -23,7 +27,7 @@ CFLAGS = -I$(BOOST_DIR)/include -I/$(OPENSSL_DIR)/include
 CFLAGS += -I$(SQLITE_DIR)/include -I$(CPP_NETLIB_DIR)/include
 
 SRCS = $(SRCS_CXX)
-OBJ_DIR = obj
+OBJ_DIR = obj/$(ARCH)
 OBJS := $(SRCS_CXX:.cpp=.o)
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJS))
 
