@@ -94,17 +94,29 @@ public:
         m_value = value;
     }
 
-	HttpPara(string name, EnumHttpParaType type)
+	HttpPara(string name, EnumHttpParaType type, string value)
     {
 		m_name = name;
         m_type = type;
+        Parse(value);
     }
 
 	string ToString();
 
-	int Parse(string value);
+	static HttpPara *CreatePara(string para);
+
+	string GetName()
+	{
+		return m_name;
+	}
+
+	HttpParaValue &GetValue()
+	{
+		return m_value;
+	}
 
 private:
+	int Parse(string value);
 
 	string m_name;
 	EnumHttpParaType m_type;
@@ -131,11 +143,36 @@ public:
 	void AddPara(string name, int value);
 	void AddPara(string name, float value);
 	void AddPara(string name, string value);
+	void AddPara(HttpPara *para);
+
+	static HttpOper *CreateOper(string oper);
 
 private:
 	void Clear();
 	int m_oper;
 	HttpParaMap m_paras;
+};
+
+class HttpBody
+{
+public:
+	HttpBody()
+	{
+		;
+	}
+
+	~HttpBody();
+
+	void AddOper(HttpOper *oper)
+	{
+		m_opers.push_back(oper);
+	}
+
+	string ToString();
+
+	static HttpBody *CreateBody(string body);
+private:
+	vector<HttpOper *> m_opers;
 };
 
 #endif
