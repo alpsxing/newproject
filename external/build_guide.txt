@@ -31,7 +31,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
 make
 make install
 
-For ARM:
+For cross compile:
 1. Sqlite:
 cd sqlite-autoconf-3090200
 ./configure --prefix=<dir> --host=arm-linux-gnueabi
@@ -46,7 +46,9 @@ make install
 
 3. boost:
 cd boost_1_59_0
-export BOOST_BUILD_USER_CONFIG=tools/build/v2/user-config.jam
+#user-config.jam contains the information of toolchain.
+#modify it to your toolchain
+export BOOST_BUILD_USER_CONFIG=tools/build/user-config.jam
 ./bootstrap.sh
 ./b2 toolset=gcc-arm install --prefix=<dir>
 
