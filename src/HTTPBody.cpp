@@ -18,6 +18,16 @@ static void _init_supported_paras()
 		return;
 
 	_supportedParas.insert(HttpParaTypeMap::value_type("op", HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type("id", HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type("cfg_flg", HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type("mem", HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type("cpu", HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type("sys_ver", HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type("mac_cnt", HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type("id_cnt", HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type("cnt_stime", HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type("cnt_etime", HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type("invl", HTTP_PARA_TYPE_INT));
 }
 
 HttpPara *HttpPara::CreatePara(string para)

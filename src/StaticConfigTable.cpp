@@ -14,4 +14,4 @@ StaticConfigTable::StaticConfigTable():
     SingleRowTable(STATIC_CONFIG_DB_NAME,
                    STATIC_CONFIG_TABLE_NAME, 1, (int)STATIC_CONFIG_BUTT, VDRStaticConfigCols)
 {
-};
+}

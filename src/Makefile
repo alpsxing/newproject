@@ -4,18 +4,18 @@ SRCS_CXX = LogUtility.cpp \
            SingleRowTable.cpp \
            ConcreteTableBase.cpp \
            StaticConfigtable.cpp \
-           HTTPBody.cpp
+           HTTPBody.cpp \
+           ControlChannel.cpp
 
 HEADS = Utility.h \
         SQLiteTable.h \
         SingleRowTable.h \
-        MultiRowWithUniqueIndexTable.h \
         LogUtility.h \
-        LargeTableBase.h \
         GeneralTimer.h \
         ConcreteTableBase.h \
         StaticConfigTable.h \
-        HTTPBody.h
+        HTTPBody.h \
+        ControlChannel.h
 
 
 OBJS = LogUtility.o \
@@ -24,7 +24,8 @@ OBJS = LogUtility.o \
        SingleRowTable.o \
        ConcreteTableBase.o \
        StaticConfigtable.o \
-       HTTPBody.o
+       HTTPBody.o \
+       ControlChannel.o
 
 
 include ../rules.mk
