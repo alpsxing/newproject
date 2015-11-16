@@ -8,6 +8,7 @@
 #include "ControlChannel.h"
 #include "boost/algorithm/string.hpp"
 #include "Utility.h"
+#include "version.h"
 using boost::format;
 
 typedef vector<string> split_vector_type;
@@ -129,3 +130,26 @@ void ControlChannel::UpdateCpu()
     return;
 }
 
+HttpOper *ControlChannel::CreateOperHello()
+{
+	HttpOper *hello = new HttpOper(OP_HEARTBEAT);
+	HttpPara *para;
+
+	if(!hello)
+		return NULL;
+
+	UpdateMemory();
+	UpdateCpu();
+
+	hello->AddPara(PARA_ID, m_mac);
+	hello->AddPara(PARA_CFG_FLG, m_cfg_flag);
+	hello->AddPara(PARA_MEM, m_memory_info);
+	hello->AddPara(PARA_CPU, m_cpu_usage);
+	hello->AddPara(PARA_SYS_VER, SYS_VERSION);
+	hello->AddPara(PARA_MAC_CNT, m_mac_count);
+	hello->AddPara(PARA_ID_CNT, m_id_count);
+	hello->AddPara(PARA_STIME, m_start_time);
+	hello->AddPara(PARA_ETIME, m_end_time);
+
+	return hello;
+}

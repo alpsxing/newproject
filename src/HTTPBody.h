@@ -17,6 +17,19 @@
 
 using namespace std;
 
+#define OP_HEARTBEAT 0
+
+#define PARA_OP                "op"
+#define PARA_ID                "id"
+#define PARA_CFG_FLG           "cfg_flg"
+#define PARA_MEM               "mem"
+#define PARA_CPU               "cpu"
+#define PARA_SYS_VER           "sys_ver"
+#define PARA_MAC_CNT           "mac_cnt"
+#define PARA_ID_CNT            "id_cnt"
+#define PARA_STIME             "cnt_stime"
+#define PARA_ETIME             "cnt_etime"
+
 typedef enum
 {
     HTTP_PARA_TYPE_INT,
