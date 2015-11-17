@@ -9,6 +9,8 @@
 #include "boost/algorithm/string.hpp"
 #include "Utility.h"
 #include "version.h"
+#include "RunningConfigTable.h"
+#include "StaticConfigTable.h"
 using boost::format;
 
 typedef vector<string> split_vector_type;
@@ -20,28 +22,33 @@ void ControlChannel::UpdateMac(string dev_name)
 	int sock;
 	const unsigned char* mac;
 
-	m_mac = "00-00-00-00-00-00";
+	memset(m_ap_mac, 0, sizeof(m_ap_mac));
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sock = -1)
-		return;
+		goto MAKESTRING;
 	strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
 
 	if (ioctl(sock, SIOCGIFHWADDR, &ifr)==-1) {
 	    close(sock);
-	    return;
+	    goto MAKESTRING;
 	}
 
 	close(sock);
 	mac = (unsigned char*)ifr.ifr_hwaddr.sa_data;
+	memcpy(m_ap_mac, mac, sizeof(m_ap_mac));
+
+MAKESTRING:
 	m_mac = "";
+	m_mac_no_hyphen = "";
 	for(int i = 0; i < 6; i ++)
 	{
 		format fmtr("%02X");
 		if(!i)
 			m_mac += "-";
-		fmtr % (unsigned int)mac[i];
+		fmtr % (unsigned int)m_ap_mac[i];
 		m_mac += fmtr.str();
+		m_mac_no_hyphen += fmtr.str();
 	}
 	return;
 }
@@ -152,4 +159,47 @@ HttpOper *ControlChannel::CreateOperHello()
 	hello->AddPara(PARA_ETIME, m_end_time);
 
 	return hello;
+}
+
+HttpOper *ControlChannel::CreateOperConfig()
+{
+	HttpOper *config;
+	HttpPara *para;
+	int flag = 0;
+	RunningConfigTable running_table;
+	StaticConfigTable static_table;
+	string sitename, siteaddr, devaddr;
+	string apid, devmodel, detailid;
+	float lon, lat;
+
+	running_table.GetFlag (flag);
+	if (!flag)
+		return NULL;
+
+	running_table.GetSiteName(sitename);
+	running_table.GetSiteAddr(siteaddr);
+	running_table.GetDevAddr(devaddr);
+	running_table.GetAppLon(lon);
+	running_table.GetAppLat(lat);
+
+	static_table.GetDevId(apid);
+	static_table.GetDevModel(devmodel);
+	static_table.GetDetailId(detailid);
+	apid += m_mac_no_hyphen;
+
+	config = new HttpOper(OP_BASIC_INFO);
+	if(!config)
+		return NULL;
+
+	config->AddPara(PARA_SITE_NAME, sitename);
+	config->AddPara(PARA_SITE_ADDR, siteaddr);
+	config->AddPara(PARA_AP_ID, apid);
+	config->AddPara(PARA_DEV_MOD, devmodel);
+	config->AddPara(PARA_AP_MAC, m_mac);
+	config->AddPara(PARA_AP_LON, lon);
+	config->AddPara(PARA_AP_LAT, lat);
+	config->AddPara(PARA_DEV_ADDR, devaddr);
+	config->AddPara(PARA_DETAIL_ID, detailid);
+
+	return config;
 }

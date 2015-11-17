@@ -5,7 +5,8 @@ SRCS_CXX = LogUtility.cpp \
            ConcreteTableBase.cpp \
            StaticConfigtable.cpp \
            HTTPBody.cpp \
-           ControlChannel.cpp
+           ControlChannel.cpp \
+           RunningConfigTable.cpp
 
 HEADS = Utility.h \
         SQLiteTable.h \
@@ -15,7 +16,8 @@ HEADS = Utility.h \
         ConcreteTableBase.h \
         StaticConfigTable.h \
         HTTPBody.h \
-        ControlChannel.h
+        ControlChannel.h \
+        RunningConfigTable.h
 
 
 OBJS = LogUtility.o \
@@ -25,7 +27,8 @@ OBJS = LogUtility.o \
        ConcreteTableBase.o \
        StaticConfigtable.o \
        HTTPBody.o \
-       ControlChannel.o
+       ControlChannel.o \
+       RunningConfigTable.o
 
 
 include ../rules.mk

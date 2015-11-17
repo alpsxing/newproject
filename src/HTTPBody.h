@@ -1,5 +1,5 @@
-#ifndef _SQLITE_TABLE_H_
-#define _SQLITE_TABLE_H_
+#ifndef _HTTP_BODY_H_
+#define _HTTP_BODY_H_
 
 #include "sqlite3.h"
 #include "boost/variant.hpp"
@@ -17,7 +17,8 @@
 
 using namespace std;
 
-#define OP_HEARTBEAT 0
+#define OP_HEARTBEAT     0
+#define OP_BASIC_INFO    42
 
 #define PARA_OP                "op"
 #define PARA_ID                "id"
@@ -29,6 +30,16 @@ using namespace std;
 #define PARA_ID_CNT            "id_cnt"
 #define PARA_STIME             "cnt_stime"
 #define PARA_ETIME             "cnt_etime"
+
+#define PARA_SITE_NAME         "site_name"
+#define PARA_SITE_ADDR         "site_addr"
+#define PARA_AP_ID             "ap_id"
+#define PARA_DEV_MOD           "dev_mod"
+#define PARA_AP_MAC            "ap_mac"
+#define PARA_AP_LON            "ap_lon"
+#define PARA_AP_LAT            "ap_lat"
+#define PARA_DEV_ADDR          "dev_addr"
+#define PARA_DETAIL_ID         "detail_id"
 
 typedef enum
 {

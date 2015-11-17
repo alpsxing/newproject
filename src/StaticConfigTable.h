@@ -1,5 +1,5 @@
-#ifndef _VDR_BASE_CONFIG_TABLE_H_
-#define _VDR_BASE_CONFIG_TABLE_H_
+#ifndef _STATIC_CONFIG_TABLE_H_
+#define _STATIC_CONFIG_TABLE_H_
 
 #include "SingleRowTable.h"
 
@@ -13,9 +13,8 @@ typedef enum
 {
     STATIC_CONFIG_DEV_ID = 0,
     STATIC_CONFIG_DEV_MODEL,
-    STATIC_CONFIG_DEV_NAME,
-    STATIC_CONFIG_DEV_ADDR,
     STATIC_CONFIG_DEV_DETAIL_ID,
+	STATIC_CONFIG_DEV_INST_CODE,
     STATIC_CONFIG_BUTT
 }ENUM_STATIC_CONFIG_COL;
 
@@ -23,6 +22,19 @@ class StaticConfigTable : public SingleRowTable
 {
 public:
 	StaticConfigTable();
+
+	int GetDevId(string &id)
+	{
+		return GetStringValue(STATIC_CONFIG_DEV_ID, id);
+	}
+	int GetDevModel(string &model)
+	{
+		return GetStringValue(STATIC_CONFIG_DEV_MODEL, model);
+	}
+	int GetDetailId(string &id)
+	{
+		return GetStringValue(STATIC_CONFIG_DEV_DETAIL_ID, id);
+	}
 };
 
 #endif
