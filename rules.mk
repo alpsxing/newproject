@@ -1,5 +1,4 @@
 ARCH ?= x86_64
-RULES_DEFINED = 1
 BASE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 MAKEFILE_DIR := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 EXTERNAL_DIR := $(BASE_DIR)/external
