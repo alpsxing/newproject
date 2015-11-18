@@ -17,6 +17,7 @@ typedef enum
     RUNNING_CONFIG_AP_LON,
     RUNNING_CONFIG_AP_LAT,
 	RUNNING_CONFIG_DEV_ADDR,
+	RUNNING_CONFIG_URL,
 	RUNNING_CONFIG_FLAG,
     RUNNING_CONFIG_BUTT
 }ENUM_RUNNING_CONFIG_COL;
@@ -50,6 +51,10 @@ public:
 	int GetDevAddr(string &addr)
 	{
 		return GetStringValue(RUNNING_CONFIG_DEV_ADDR, addr);
+	}
+	int GetUrl(string &url)
+	{
+		return GetStringValue(RUNNING_CONFIG_URL, url);
 	}
 };
 

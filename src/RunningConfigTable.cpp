@@ -9,6 +9,7 @@ const static SQLiteColumn VDRRunningConfigCols[RUNNING_CONFIG_BUTT] = {
     SQLiteColumn("ApLon",         ENUM_SQLite_COLUMN_FLOAT,        true, false, false, false, false, SQLiteValue(0.0f)),
     SQLiteColumn("ApLat",         ENUM_SQLite_COLUMN_FLOAT,        true, false, false, false, false, SQLiteValue(0.0f)),
     SQLiteColumn("DevAddr",       ENUM_SQLite_COLUMN_STRING,       true, false, false, false, false, SQLiteValue("NULL")),
+    SQLiteColumn("URL",           ENUM_SQLite_COLUMN_STRING,       true, false, false, false, false, SQLiteValue("11.11.11.11")),
     SQLiteColumn("Flag",          ENUM_SQLite_COLUMN_INTEGER,      true, false, false, false, false, SQLiteValue(0)),
 };
 

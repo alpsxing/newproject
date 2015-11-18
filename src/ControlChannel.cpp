@@ -4,19 +4,142 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <fstream>
+#include <vector>
 #include "boost/format.hpp"
-#include "ControlChannel.h"
 #include "boost/algorithm/string.hpp"
 #include "Utility.h"
 #include "version.h"
 #include "RunningConfigTable.h"
 #include "StaticConfigTable.h"
-using boost::format;
+#include "ControlChannel.h"
+#include <boost/network/protocol/http/client.hpp>
 
-typedef vector<string> split_vector_type;
+using boost::format;
+using namespace boost::network;
 using namespace boost;
 
-void ControlChannel::UpdateMac(string dev_name)
+typedef std::vector<std::string> split_vector_type;
+
+ControlChannel *ControlChannel::Instance()
+{
+    if(!m_instance)
+    {
+        m_instance = new ControlChannel();
+    }
+
+    return m_instance;
+}
+
+void ControlChannel::Destroy()
+{
+    if(m_instance != NULL)
+    {
+        delete m_instance;
+    }
+}
+
+ControlChannel::ControlChannel()
+{
+	RunningConfigTable running_table;
+
+	m_cfg_flag = 0;
+	UpdateMac("eth0");
+	m_mac_count = 0;
+	m_id_count = 0;
+	m_start_time = "000000000000";
+	m_end_time = "000000000000";
+	pthread_mutex_init(&m_mutex, NULL);
+	pthread_cond_init (&m_cond, NULL);
+	m_should_send = 0;
+	m_runtable_flag = 0;
+	m_url = "";
+	running_table.GetFlag(m_runtable_flag);
+	running_table.GetUrl(m_url);
+	m_exit = 0;
+}
+
+ControlChannel::~ControlChannel()
+{
+    Stop();
+    pthread_mutex_destroy(&m_mutex);
+    pthread_cond_destroy(&m_cond);
+}
+
+void ControlChannel::Start()
+{
+    if(m_exit == true)
+    {
+        m_exit = false;
+        pthread_create(&m_tid, NULL, this->ThreadLoop, this);
+    }
+
+    return;
+}
+
+void ControlChannel::Stop()
+{
+    if(m_exit != true)
+    {
+    	pthread_mutex_lock(&m_mutex);
+        m_exit = true;
+        pthread_cond_signal(&m_cond);
+        pthread_mutex_unlock(&m_mutex);
+        pthread_join(m_tid, NULL);
+    }
+
+    return;
+}
+
+void *ControlChannel::ThreadLoop(void *arg)
+{
+	ControlChannel *controlChannel = reinterpret_cast<ControlChannel *> (arg);
+
+	controlChannel->SendRequest(1);
+	while(1)
+	{
+		pthread_mutex_lock(&controlChannel->m_mutex);
+		if(!controlChannel -> m_exit && !controlChannel->m_should_send)
+			pthread_cond_wait(&controlChannel->m_cond, &controlChannel->m_mutex);
+		if(controlChannel->m_exit)
+		{
+			pthread_mutex_unlock(&controlChannel->m_mutex);
+			break;
+		}
+
+		if(controlChannel->m_should_send)
+		{
+			pthread_mutex_unlock(&controlChannel->m_mutex);
+			controlChannel->SendRequest(0);
+		}
+		else
+			pthread_mutex_unlock(&controlChannel->m_mutex);
+	}
+	pthread_exit(NULL);
+}
+
+void ControlChannel::SendRequest(int first)
+{
+	HttpOper *hello = CreateOperHello();
+	HttpOper *config = NULL;
+	HttpBody http_body;
+	http::client client;
+
+	if(!hello)
+		return;
+	if(first)
+		config = CreateOperConfig();
+	http_body.AddOper(hello);
+	if(!config)
+		http_body.AddOper(config);
+
+	http::client::request request(m_url);
+	request << header("Content-Type", "application/x-www-form-urlencoded");
+	request << body(http_body.ToString());
+	http::client::response response = client.get(request);
+	return;
+}
+
+void ControlChannel::UpdateMac(std::string dev_name)
 {
 	struct ifreq ifr;
 	int sock;
@@ -55,7 +178,7 @@ MAKESTRING:
 
 void ControlChannel::UpdateMemory()
 {
-    string line;
+    std::string line;
     long total_mem = -1;
     long free_mem = -1;
     ifstream myfile("/proc/meminfo");
@@ -92,7 +215,7 @@ void ControlChannel::UpdateMemory()
 
 void ControlChannel::UpdateCpu()
 {
-    string line;
+    std::string line;
     long total = 0;
     long idle = 0;
     float usage = 0.0f;
@@ -165,15 +288,13 @@ HttpOper *ControlChannel::CreateOperConfig()
 {
 	HttpOper *config;
 	HttpPara *para;
-	int flag = 0;
 	RunningConfigTable running_table;
 	StaticConfigTable static_table;
-	string sitename, siteaddr, devaddr;
-	string apid, devmodel, detailid;
+	std::string sitename, siteaddr, devaddr;
+	std::string apid, devmodel, detailid;
 	float lon, lat;
 
-	running_table.GetFlag (flag);
-	if (!flag)
+	if (!m_runtable_flag)
 		return NULL;
 
 	running_table.GetSiteName(sitename);
