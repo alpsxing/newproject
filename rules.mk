@@ -1,13 +1,13 @@
 ARCH ?= x86_64
 BASE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 MAKEFILE_DIR := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
-EXTERNAL_DIR := $(BASE_DIR)/external
+EXTERNAL_DIR := $(BASE_DIR)external
 EXTERNAL_LIB_DIR := $(EXTERNAL_DIR)/lib/$(ARCH)
 BOOST_DIR := $(EXTERNAL_LIB_DIR)/boost
 OPENSSL_DIR := $(EXTERNAL_LIB_DIR)/openssl
 SQLITE_DIR := $(EXTERNAL_LIB_DIR)/sqlite
 CPP_NETLIB_DIR := $(EXTERNAL_LIB_DIR)/cpp-netlib
-TOOLS_DIR = $(BASE_DIR)/tools
+TOOLS_DIR = $(BASE_DIR)tools
 
 ifeq ($(ARCH), x86_64)
 CC=gcc
@@ -23,7 +23,7 @@ endif
 endif
 endif
 
-SOURCE_DIR = $(BASE_DIR)/src
+SOURCE_DIR = $(BASE_DIR)src
 CFLAGS = -I$(BOOST_DIR)/include -I/$(OPENSSL_DIR)/include
 CFLAGS += -I$(SQLITE_DIR)/include -I$(CPP_NETLIB_DIR)/include
 
@@ -34,7 +34,6 @@ OBJS := $(addprefix $(OBJ_DIR)/, $(OBJS))
 
 ifeq ($(TARGET),)
 all : $(OBJS)
-	@echo "OBJS=$(OBJS)"
 
 clean :
 	@rm -fr $(OBJ_DIR)

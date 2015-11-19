@@ -7,12 +7,6 @@
 
 using namespace std;
 
-class SingleRowTableEventHandlerInterface
-{
-public:
-    virtual int FieldChangeEventHandler(vector<int> changedItems) = 0;
-};
-
 class SingleRowTable : public ConcreteTableBase
 {
 public:
@@ -23,12 +17,6 @@ public:
         return m_values;
     }
     
-    void SetHandler(SingleRowTableEventHandlerInterface *handler)
-    {
-    	CommonThreadLock thread_lock(&m_eventMutex);
-    	m_eventHandler = handler;
-    }
-
     int GetIntValue(int colid, int &value);
     int GetStringValue(int colid, string &value);
     int GetFloatValue(int colid, float &value);
@@ -47,22 +35,13 @@ protected:
         {
             m_dirty.push_back(false);
         }
-        m_eventHandler = NULL;
-        pthread_mutex_init(&m_eventMutex, NULL);
         Refresh();
-    }
-
-    ~SingleRowTable()
-    {
-    	pthread_mutex_destroy(&m_eventMutex);
     }
 
     void SendNotification();
 private:
     SQLiteValuePair m_values;
     vector<bool> m_dirty;
-    SingleRowTableEventHandlerInterface *m_eventHandler;
-    pthread_mutex_t m_eventMutex;
 };
 
 ostream& operator <<(ostream& os, const SingleRowTable& table);

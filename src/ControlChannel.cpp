@@ -20,6 +20,15 @@ using namespace boost;
 
 typedef std::vector<std::string> split_vector_type;
 
+static void ControlChannelTimerHandler(std::string &name, void *data, void *data2)
+{
+	ControlChannel *handler = (ControlChannel *)data;
+    if(handler != NULL)
+    {
+        handler->HandleTimer(name, data2);
+    }
+}
+
 ControlChannel *ControlChannel::Instance()
 {
     if(!m_instance)
@@ -41,6 +50,7 @@ void ControlChannel::Destroy()
 ControlChannel::ControlChannel()
 {
 	RunningConfigTable running_table;
+	int invl = 300;
 
 	m_cfg_flag = 0;
 	UpdateMac("eth0");
@@ -55,14 +65,29 @@ ControlChannel::ControlChannel()
 	m_url = "";
 	running_table.GetFlag(m_runtable_flag);
 	running_table.GetUrl(m_url);
+	running_table.GetInvl(invl);
+	if((invl < 10) || (invl > 3600))
+		invl = 300;
+	m_helloTimer = NULL;
+	ChangeHelloInvl(invl, 0);
 	m_exit = 0;
 }
 
 ControlChannel::~ControlChannel()
 {
+    DestroyTimer(m_helloTimer);
     Stop();
     pthread_mutex_destroy(&m_mutex);
     pthread_cond_destroy(&m_cond);
+}
+
+void ControlChannel::ChangeHelloInvl(int invl, int start)
+{
+	if(m_helloTimer)
+		DestroyTimer(m_helloTimer);
+	m_helloTimer = CreateTimer(HELLO_TIMER_NAME, TIMER_SEC_TO_MSEC(invl), this, ControlChannelTimerHandler, true);
+	if(start)
+		StartTimer(m_helloTimer);
 }
 
 void ControlChannel::Start()
@@ -94,6 +119,8 @@ void *ControlChannel::ThreadLoop(void *arg)
 {
 	ControlChannel *controlChannel = reinterpret_cast<ControlChannel *> (arg);
 
+	StartTimer(controlChannel->m_helloTimer);
+
 	controlChannel->SendRequest(1);
 	while(1)
 	{
@@ -108,12 +135,14 @@ void *ControlChannel::ThreadLoop(void *arg)
 
 		if(controlChannel->m_should_send)
 		{
+			controlChannel->m_should_send = 0;
 			pthread_mutex_unlock(&controlChannel->m_mutex);
 			controlChannel->SendRequest(0);
 		}
 		else
 			pthread_mutex_unlock(&controlChannel->m_mutex);
 	}
+	StopTimer(controlChannel->m_helloTimer);
 	pthread_exit(NULL);
 }
 
@@ -122,7 +151,9 @@ void ControlChannel::SendRequest(int first)
 	HttpOper *hello = CreateOperHello();
 	HttpOper *config = NULL;
 	HttpBody http_body;
-	http::client client;
+	unsigned short response_status;
+	std::string response_body;
+	HttpBody *resp;
 
 	if(!hello)
 		return;
@@ -132,10 +163,132 @@ void ControlChannel::SendRequest(int first)
 	if(!config)
 		http_body.AddOper(config);
 
-	http::client::request request(m_url);
-	request << header("Content-Type", "application/x-www-form-urlencoded");
-	request << body(http_body.ToString());
-	http::client::response response = client.get(request);
+	http::client::options options;
+	options.timeout(10);
+	http::client client(options);
+	try
+	{
+		http::client::request request(m_url);
+		request << header("Content-Type", "application/x-www-form-urlencoded");
+		request << body(http_body.ToString());
+		http::client::response response = client.post(request);
+		response_status = http::status(response);
+		if(response_status != 200)
+			return;
+		response_body = body(response);
+	} catch (std::exception &e)
+	{
+		return;
+	}
+
+	resp = HttpBody::CreateBody(response_body);
+	if(!resp)
+		return;
+
+	return;
+}
+
+void ControlChannel::ProcessResponse(HttpBody *resp)
+{
+	std::vector<HttpOper *> *opers = resp->GetOpers();
+
+	for(int i = 0; i < opers->size(); i ++)
+	{
+		HttpOper *oper = (*opers)[i];
+		int op = oper->GetOper();
+		switch(op)
+		{
+		case OP_HEARTBEAT:
+			ProcessHelloResponse(oper);
+			break;
+		case OP_BASIC_INFO:
+			ProcessConfigResponse(oper);
+			break;
+		}
+	}
+}
+
+void ControlChannel::ProcessHelloResponse(HttpOper *oper)
+{
+	HttpParaMap *paras = oper->GetParas();
+	HttpParaMap::iterator itr = paras->begin();
+
+	while(itr != paras->end())
+	{
+		HttpPara *para = (HttpPara *)itr->second;
+		std::string name = para->GetName();
+		if(!name.compare(PARA_CFG_FLG))
+		{
+			m_cfg_flag = GetHttpParaValueInt(para->GetValue());
+		}
+		else if(!name.compare(PARA_CFG_FLG))
+		{
+			int invl = GetHttpParaValueInt(para->GetValue());
+			if((invl > 10) && (invl < 3600))
+			{
+				RunningConfigTable table;
+				table.SetInvl(invl);
+				table.Commit();
+				ChangeHelloInvl(invl, 1);
+			}
+		}
+	}
+
+	return;
+}
+
+void ControlChannel::ProcessConfigResponse(HttpOper *oper)
+{
+	HttpParaMap *paras = oper->GetParas();
+	HttpParaMap::iterator itr = paras->begin();
+	RunningConfigTable table;
+
+	while(itr != paras->end())
+	{
+		HttpPara *para = (HttpPara *)itr->second;
+		std::string name = para->GetName();
+		if(!name.compare(PARA_SITE_ID))
+		{
+			std::string siteid = "";
+			GetHttpParaValueString(para->GetValue(), siteid);
+			if(!siteid.empty())
+				table.SetSiteId(siteid);
+		}
+		else if(!name.compare(PARA_SITE_NAME))
+		{
+			std::string sitename = "";
+			GetHttpParaValueString(para->GetValue(), sitename);
+			if(!sitename.empty())
+				table.SetSiteName(sitename);
+		}
+		else if(!name.compare(PARA_SITE_ADDR))
+		{
+			std::string siteaddr = "";
+			GetHttpParaValueString(para->GetValue(), siteaddr);
+			if(!siteaddr.empty())
+				table.SetSiteAddr(siteaddr);
+		}
+		else if(!name.compare(PARA_AP_LON))
+		{
+			float lon = GetHttpParaValueFloat(para->GetValue());
+			table.SetAppLon(lon);
+		}
+		else if(!name.compare(PARA_AP_LAT))
+		{
+			float lat = GetHttpParaValueFloat(para->GetValue());
+			table.SetAppLat(lat);
+		}
+		else if(!name.compare(PARA_DEV_ADDR))
+		{
+			std::string devaddr = "";
+			GetHttpParaValueString(para->GetValue(), devaddr);
+			if(!devaddr.empty())
+				table.SetDevAddr(devaddr);
+		}
+	}
+
+	table.Commit();
+
 	return;
 }
 
@@ -323,4 +476,18 @@ HttpOper *ControlChannel::CreateOperConfig()
 	config->AddPara(PARA_DETAIL_ID, detailid);
 
 	return config;
+}
+
+void ControlChannel::HandleTimer(std::string &name, void *data)
+{
+	if(name == HELLO_TIMER_NAME)
+	{
+	    if(!m_should_send)
+	    {
+	    	pthread_mutex_lock(&m_mutex);
+	    	m_should_send = 1;
+	        pthread_cond_signal(&m_cond);
+	        pthread_mutex_unlock(&m_mutex);
+	    }
+	}
 }

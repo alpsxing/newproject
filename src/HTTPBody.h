@@ -30,6 +30,7 @@ using namespace std;
 #define PARA_ID_CNT            "id_cnt"
 #define PARA_STIME             "cnt_stime"
 #define PARA_ETIME             "cnt_etime"
+#define PARA_INVL              "invl"
 
 #define PARA_SITE_NAME         "site_name"
 #define PARA_SITE_ADDR         "site_addr"
@@ -40,6 +41,7 @@ using namespace std;
 #define PARA_AP_LAT            "ap_lat"
 #define PARA_DEV_ADDR          "dev_addr"
 #define PARA_DETAIL_ID         "detail_id"
+#define PARA_SITE_ID           "site_id"
 
 typedef enum
 {
@@ -162,6 +164,16 @@ public:
 		Clear();
 	}
 
+	int GetOper()
+	{
+		return m_oper;
+	}
+
+	HttpParaMap *GetParas()
+	{
+		return &m_paras;
+	}
+
 	string ToString();
 
 	void AddPara(string name, int value);
@@ -190,6 +202,11 @@ public:
 	void AddOper(HttpOper *oper)
 	{
 		m_opers.push_back(oper);
+	}
+
+	vector<HttpOper *> *GetOpers()
+	{
+		return &m_opers;
 	}
 
 	string ToString();

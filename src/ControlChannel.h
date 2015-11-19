@@ -3,9 +3,12 @@
 
 #include <string>
 #include <pthread.h>
+#include "GeneralTimer.h"
 #include "HTTPBody.h"
 
 using namespace std;
+
+#define HELLO_TIMER_NAME      "hellotimer"
 
 class ControlChannel
 {
@@ -15,6 +18,8 @@ public:
 	static void Destroy();
 	void Start();
 	void Stop();
+	void HandleTimer(string &name, void *data);
+	void ChangeHelloInvl(int invl, int start);
 
 protected:
 	ControlChannel();
@@ -25,6 +30,9 @@ private:
 	HttpOper *CreateOperHello();
 	HttpOper *CreateOperConfig();
 	void SendRequest(int first);
+	void ProcessResponse(HttpBody *resp);
+	void ProcessHelloResponse(HttpOper *oper);
+	void ProcessConfigResponse(HttpOper *oper);
 
 	string m_mac;
 	string m_mac_no_hyphen;
@@ -47,6 +55,7 @@ private:
     pthread_t m_tid;
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
+    GeneralTimerItem *m_helloTimer;
 
 	static ControlChannel *m_instance;
 };

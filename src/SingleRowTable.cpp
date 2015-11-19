@@ -245,10 +245,6 @@ void SingleRowTable::SendNotification()
 
     if(changed.size() <= 0)
     	return;
-
-    CommonThreadLock thread_lock(&m_eventMutex);
-    if(m_eventHandler)
-    	m_eventHandler->FieldChangeEventHandler(changed);
 }
 
 ostream& operator <<(ostream& os, const SingleRowTable& table)
