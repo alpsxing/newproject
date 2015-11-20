@@ -3,10 +3,12 @@ SRCS_CXX = LogUtility.cpp \
            SQLiteTable.cpp \
            SingleRowTable.cpp \
            ConcreteTableBase.cpp \
-           StaticConfigtable.cpp \
+           StaticConfigTable.cpp \
            HTTPBody.cpp \
            ControlChannel.cpp \
-           RunningConfigTable.cpp
+           RunningConfigTable.cpp \
+           WebServer.cpp \
+           main.cpp
 
 HEADS = Utility.h \
         SQLiteTable.h \
@@ -17,18 +19,10 @@ HEADS = Utility.h \
         StaticConfigTable.h \
         HTTPBody.h \
         ControlChannel.h \
-        RunningConfigTable.h
+        RunningConfigTable.h \
+        WebServer.h
 
-
-OBJS = LogUtility.o \
-       GeneralTimer.o \
-       SQLiteTable.o \
-       SingleRowTable.o \
-       ConcreteTableBase.o \
-       StaticConfigtable.o \
-       HTTPBody.o \
-       ControlChannel.o \
-       RunningConfigTable.o
+TARGET = new_project
 
 
 include ../rules.mk

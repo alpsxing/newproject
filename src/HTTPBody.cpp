@@ -80,6 +80,11 @@ int HttpPara::Parse(string value)
 	return 0;
 }
 
+string HttpPara::ToString()
+{
+	return m_name + HttpParaValueToString(m_type, m_value);
+}
+
 void HttpOper::AddPara(HttpPara *para)
 {
 	if(!para)

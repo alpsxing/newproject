@@ -20,6 +20,8 @@ using namespace boost;
 
 typedef std::vector<std::string> split_vector_type;
 
+ControlChannel *ControlChannel::m_instance = NULL;
+
 static void ControlChannelTimerHandler(std::string &name, void *data, void *data2)
 {
 	ControlChannel *handler = (ControlChannel *)data;

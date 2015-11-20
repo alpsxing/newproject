@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define CONTROL_INSTANCE ControlChannel::Instance()
+
 #define HELLO_TIMER_NAME      "hellotimer"
 
 class ControlChannel
