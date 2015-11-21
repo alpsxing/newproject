@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include "LogUtility.h"
+#include "WebServer.h"
 
 namespace po = boost::program_options;
 
@@ -14,8 +15,8 @@ static int ProcessOptions(int argc, char *argv[])
         po::options_description options("Allowed options");
         options.add_options()
             ("help", "produce help message")
-            ("addr", "web server binding address")
-            ("port", "web server port")
+            ("addr", po::value<std::string>(), "web server binding address")
+            ("port", po::value<int>(), "web server port")
             ("debug", po::value<int>(), "set debug level")
             ("log", po::value<int>(), "set log level")
         ;
@@ -30,7 +31,7 @@ static int ProcessOptions(int argc, char *argv[])
         }
 
         if (vm.count("addr")) {
-        	_web_server_addr = vm["debug"].as<std::string>();
+        	_web_server_addr = vm["addr"].as<std::string>();
         }
 
         if (vm.count("port")) {
@@ -41,16 +42,12 @@ static int ProcessOptions(int argc, char *argv[])
             std::cout << "debug level was set to "
                  << vm["debug"].as<int>() << ".\n";
             LogUtility::SetStdoutLevel(vm["debug"].as<int>());
-        } else {
-            std::cout << "debug level was not set.\n";
         }
 
         if (vm.count("log")) {
             std::cout << "log level was set to "
                  << vm["log"].as<int>() << ".\n";
             LogUtility::SetLogLevel(vm["log"].as<int>());
-        } else {
-            std::cout << "log level was not set.\n";
         }
     }
     catch(std::exception& e) {
@@ -70,6 +67,8 @@ int main(int argc, char **argv)
     {
 	    return 1;
 	}
+
+	WebServer::Run(_web_server_addr, _web_server_port);
 
     return 0;
 }

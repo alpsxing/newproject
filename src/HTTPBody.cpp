@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "LogUtility.h"
 #include <boost/algorithm/string.hpp>
 
 typedef map<string, EnumHttpParaType> HttpParaTypeMap;
@@ -43,9 +44,14 @@ HttpPara *HttpPara::CreatePara(string para)
 	string name, value;
 	_init_supported_paras();
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Create para %s", para.c_str());
+
 	split(para_pair, para, is_any_of("="), token_compress_on);
 	if(para_pair.size() != 2)
+	{
+		LogUtility::Log(LOG_LEVEL_WARN, "Invalid para number %d", para_pair.size());
 		return NULL;
+	}
 
 	name = para_pair[0];
 	value = para_pair[1];
@@ -82,7 +88,7 @@ int HttpPara::Parse(string value)
 
 string HttpPara::ToString()
 {
-	return m_name + HttpParaValueToString(m_type, m_value);
+	return m_name + "=" + HttpParaValueToString(m_type, m_value);
 }
 
 void HttpOper::AddPara(HttpPara *para)
@@ -134,15 +140,17 @@ string HttpOper::ToString()
 {
 	string result;
 
-	result = numToString<int>(m_oper);
+	result = "op=" + numToString<int>(m_oper);
 
 	HttpParaMap::iterator itr = m_paras.begin();
+
 
 	while(itr != m_paras.end())
 	{
 		HttpPara *para = (HttpPara *)itr->second;
 		result += "&";
 		result += para->ToString();
+		itr ++;
 	}
 
 	return result;
@@ -154,13 +162,20 @@ HttpOper *HttpOper::CreateOper(string oper)
 	int op_get = 0;
 	HttpOper *http_oper = NULL;
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Create oper %s", oper.c_str());
+
 	split(paras, oper, is_any_of("&"), token_compress_on);
 	if(paras.size() < 1)
 		return NULL;
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Para size %d", paras.size());
+
 	for(int i = 0; i < paras.size(); i ++)
 	{
 		string para_string = paras[i];
+
+		LogUtility::Log(LOG_LEVEL_DEBUG, "Process para %s", para_string.c_str());
+
 		trim(para_string);
 		if(para_string.length() <= 0)
 			continue;
@@ -202,9 +217,13 @@ HttpBody *HttpBody::CreateBody(string body)
 	split_vector_type opers;
 	HttpBody *http_body = NULL;
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Create body %s", body.c_str());
+
 	split(opers, body, is_any_of("\n"), token_compress_on);
 	if(opers.size() < 1)
 		return NULL;
+
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Oper count: %d", opers.size());
 
 	for(int i = 0; i < opers.size(); i ++)
 	{

@@ -170,8 +170,10 @@ void ControlChannel::SendRequest(int first)
 	http::client client(options);
 	try
 	{
+		std::string body_string = http_body.ToString();
 		http::client::request request(m_url);
 		request << header("Content-Type", "application/x-www-form-urlencoded");
+		request << header("Content-Length", numToString<unsigned int>((unsigned int)body_string.length()));
 		request << body(http_body.ToString());
 		http::client::response response = client.post(request);
 		response_status = http::status(response);
@@ -186,6 +188,8 @@ void ControlChannel::SendRequest(int first)
 	resp = HttpBody::CreateBody(response_body);
 	if(!resp)
 		return;
+
+	ProcessResponse(resp);
 
 	return;
 }

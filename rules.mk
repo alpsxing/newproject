@@ -59,7 +59,7 @@ $(TARGET) : $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
 install: $(TARGET)
-	rm -fr $(INSTALL_DIR)
+	rm -fr $(INSTALL_DIR)/*
 	mkdir -p $(INSTALL_DIR)/lib/openssl
 	mkdir -p $(INSTALL_DIR)/lib/boost
 	mkdir -p $(INSTALL_DIR)/lib/sqlite
@@ -74,7 +74,7 @@ clean :
 
 distclean:
 	@rm -fr $(OBJ_DIR) $(TARGET)
-	@rm -fr $(INSTALL_DIR)
+	@rm -fr $(INSTALL_DIR)/*
 endif
 
 $(OBJ_DIR)/%.o : %.cpp $(HEADS)

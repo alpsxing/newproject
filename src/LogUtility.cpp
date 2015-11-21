@@ -1,7 +1,7 @@
 #include "LogUtility.h"
 
 int LogUtility::m_syslogLevel = LOG_LEVEL_OFF;
-int LogUtility::m_stdoutLevel = LOG_LEVEL_DEBUG;
+int LogUtility::m_stdoutLevel = LOG_LEVEL_INFO;
 bool LogUtility::m_first = true;
 static int m_logMap[] = {LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERR};
 static const char *m_logLevelName[] = {"DEBUG", "INFO", "WARN", "ERROR"}; 
