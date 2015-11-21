@@ -191,6 +191,8 @@ void ControlChannel::SendRequest(int first)
 
 	ProcessResponse(resp);
 
+	delete resp;
+
 	return;
 }
 

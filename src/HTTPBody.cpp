@@ -131,8 +131,9 @@ void HttpOper::Clear()
 
 	while(itr != m_paras.end())
 	{
-		delete (HttpPara *)itr->second;
-		m_paras.erase(itr);
+		HttpParaMap::iterator save_itr = itr ++;
+		delete (HttpPara *)save_itr->second;
+		m_paras.erase(save_itr);
 	}
 }
 

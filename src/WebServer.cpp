@@ -62,4 +62,6 @@ void WebServer::ProcessRequest(std::string request_body)
 	}
 
 	LogUtility::Log(LOG_LEVEL_DEBUG, "Request body %s processed", resp->ToString().c_str());
+
+	delete resp;
 }
