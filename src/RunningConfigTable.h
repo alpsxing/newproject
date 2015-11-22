@@ -19,6 +19,9 @@ typedef enum
 	RUNNING_CONFIG_DEV_ADDR,
 	RUNNING_CONFIG_URL,
 	RUNNING_CONFIG_INVL,
+	RUNNING_CONFIG_UP_INVL,
+	RUNNING_CONFIG_SRV_CODE,
+	RUNNING_CONFIG_DATA_SERVER,
 	RUNNING_CONFIG_FLAG,
     RUNNING_CONFIG_BUTT
 }ENUM_RUNNING_CONFIG_COL;
@@ -36,6 +39,14 @@ public:
 	{
 		return SetIntValue(RUNNING_CONFIG_INVL, invl);
 	}
+	int GetUpInvl(int &invl)
+	{
+		return GetIntValue(RUNNING_CONFIG_UP_INVL, invl);
+	}
+	int SetUpInvl(int invl)
+	{
+		return SetIntValue(RUNNING_CONFIG_UP_INVL, invl);
+	}
 	int SetSiteId(string &siteid)
 	{
 		return SetStringValue(RUNNING_CONFIG_SITE_ID, siteid);
@@ -43,6 +54,10 @@ public:
 	int GetFlag(int &flag)
 	{
 		return GetIntValue(RUNNING_CONFIG_FLAG, flag);
+	}
+	int SetFlag(int flag)
+	{
+		return SetIntValue(RUNNING_CONFIG_FLAG, flag);
 	}
 	int GetSiteName(string &name)
 	{
@@ -87,6 +102,26 @@ public:
 	int GetUrl(string &url)
 	{
 		return GetStringValue(RUNNING_CONFIG_URL, url);
+	}
+	int SetUrl(string &url)
+	{
+		return SetStringValue(RUNNING_CONFIG_URL, url);
+	}
+	int GetSrvCode(string &code)
+	{
+		return GetStringValue(RUNNING_CONFIG_SRV_CODE, code);
+	}
+	int SetSrvCode(string &code)
+	{
+		return SetStringValue(RUNNING_CONFIG_SRV_CODE, code);
+	}
+	int GetDataUrl(string &url)
+	{
+		return GetStringValue(RUNNING_CONFIG_DATA_SERVER, url);
+	}
+	int SetDataUrl(string &url)
+	{
+		return SetStringValue(RUNNING_CONFIG_DATA_SERVER, url);
 	}
 };
 

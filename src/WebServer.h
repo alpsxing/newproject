@@ -7,7 +7,8 @@ class WebServer
 {
 public:
 	static void Run(std::string addr, int port);
-	static void ProcessRequest(std::string request_body);
+	static int ProcessRequest(std::string request_body);
+	static void CreateResponse(std::string &result);
 };
 
 #endif

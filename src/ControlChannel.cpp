@@ -51,28 +51,28 @@ void ControlChannel::Destroy()
 
 ControlChannel::ControlChannel()
 {
-	RunningConfigTable running_table;
-	int invl = 300;
-
 	m_cfg_flag = 0;
 	UpdateMac("eth0");
 	m_mac_count = 0;
 	m_id_count = 0;
 	m_start_time = "000000000000";
 	m_end_time = "000000000000";
+
+	m_should_send = 0;
+	m_should_update = 0;
+	m_send_base_info = 0;
+
+	m_runtable_flag = 0;
+	m_invl = 300;
+	UpdateRunningParas();
+	UpdateStaticParas();
+
+	m_helloTimer = NULL;
+	ChangeHelloInvl(m_invl, 0);
+	m_exit = 0;
+
 	pthread_mutex_init(&m_mutex, NULL);
 	pthread_cond_init (&m_cond, NULL);
-	m_should_send = 0;
-	m_runtable_flag = 0;
-	m_url = "";
-	running_table.GetFlag(m_runtable_flag);
-	running_table.GetUrl(m_url);
-	running_table.GetInvl(invl);
-	if((invl < 10) || (invl > 3600))
-		invl = 300;
-	m_helloTimer = NULL;
-	ChangeHelloInvl(invl, 0);
-	m_exit = 0;
 }
 
 ControlChannel::~ControlChannel()
@@ -135,6 +135,12 @@ void *ControlChannel::ThreadLoop(void *arg)
 			break;
 		}
 
+		if(controlChannel->m_should_update)
+		{
+			controlChannel->m_should_update = 0;
+			controlChannel->UpdateRunningParas();
+		}
+
 		if(controlChannel->m_should_send)
 		{
 			controlChannel->m_should_send = 0;
@@ -151,7 +157,8 @@ void *ControlChannel::ThreadLoop(void *arg)
 void ControlChannel::SendRequest(int first)
 {
 	HttpOper *hello = CreateOperHello();
-	HttpOper *config = NULL;
+	HttpOper *base_info = NULL;
+	HttpOper *config;
 	HttpBody http_body;
 	unsigned short response_status;
 	std::string response_body;
@@ -159,11 +166,16 @@ void ControlChannel::SendRequest(int first)
 
 	if(!hello)
 		return;
-	if(first)
+	if(first || m_send_base_info)
+		base_info = CreateOperBaseInfo();
+	if(m_configResp.size())
 		config = CreateOperConfig();
 	http_body.AddOper(hello);
+	if(!base_info)
+		http_body.AddOper(base_info);
 	if(!config)
 		http_body.AddOper(config);
+
 
 	http::client::options options;
 	options.timeout(10);
@@ -210,7 +222,10 @@ void ControlChannel::ProcessResponse(HttpBody *resp)
 			ProcessHelloResponse(oper);
 			break;
 		case OP_BASIC_INFO:
-			ProcessConfigResponse(oper);
+			ProcessBaseInfoResponse(oper);
+			break;
+		case OP_DEVICE_CONFIG:
+			ProcessDeviceConfigResponse(oper);
 			break;
 		}
 	}
@@ -229,7 +244,7 @@ void ControlChannel::ProcessHelloResponse(HttpOper *oper)
 		{
 			m_cfg_flag = GetHttpParaValueInt(para->GetValue());
 		}
-		else if(!name.compare(PARA_CFG_FLG))
+		else if(!name.compare(PARA_INVL))
 		{
 			int invl = GetHttpParaValueInt(para->GetValue());
 			if((invl > 10) && (invl < 3600))
@@ -237,15 +252,17 @@ void ControlChannel::ProcessHelloResponse(HttpOper *oper)
 				RunningConfigTable table;
 				table.SetInvl(invl);
 				table.Commit();
+				m_invl = invl;
 				ChangeHelloInvl(invl, 1);
 			}
 		}
+		itr ++;
 	}
 
 	return;
 }
 
-void ControlChannel::ProcessConfigResponse(HttpOper *oper)
+void ControlChannel::ProcessBaseInfoResponse(HttpOper *oper)
 {
 	HttpParaMap *paras = oper->GetParas();
 	HttpParaMap::iterator itr = paras->begin();
@@ -293,9 +310,70 @@ void ControlChannel::ProcessConfigResponse(HttpOper *oper)
 			if(!devaddr.empty())
 				table.SetDevAddr(devaddr);
 		}
+		itr ++;
+	}
+
+	m_runtable_flag = 1;
+	table.SetFlag(m_runtable_flag);
+	table.Commit();
+	m_should_update = 1;
+
+	return;
+}
+
+void ControlChannel::ProcessDeviceConfigResponse(HttpOper *oper)
+{
+	HttpParaMap *paras = oper->GetParas();
+	HttpParaMap::iterator itr = paras->begin();
+	RunningConfigTable table;
+
+	m_configResp.clear();
+
+	while(itr != paras->end())
+	{
+		HttpPara *para = (HttpPara *)itr->second;
+		std::string name = para->GetName();
+		if(!name.compare(PARA_UP_INVL))
+		{
+			int invl = GetHttpParaValueInt(para->GetValue());
+			if((invl > 10) && (invl < 3600))
+			{
+				RunningConfigTable table;
+				table.SetUpInvl(invl);
+				table.Commit();
+			}
+		}
+		else if(!name.compare(PARA_SRV_CODE))
+		{
+			std::string code = "";
+			GetHttpParaValueString(para->GetValue(), code);
+			if(!code.empty())
+				table.SetSrvCode(code);
+		}
+		else if(!name.compare(PARA_DATA_SERVER))
+		{
+			std::string url = "";
+			GetHttpParaValueString(para->GetValue(), url);
+			if(!url.empty())
+				table.SetDataUrl(url);
+		}
+		else if(!name.compare(PARA_CONTROL_SERVER))
+		{
+			std::string url = "";
+			GetHttpParaValueString(para->GetValue(), url);
+			if(!url.empty()) {
+				table.SetUrl(url);
+				m_url = url;
+			}
+		}
+
+		m_configResp.insert(std::map<std::string, int>::value_type(name, 1));
+		itr ++;
 	}
 
 	table.Commit();
+
+	m_should_update = 1;
 
 	return;
 }
@@ -445,43 +523,52 @@ HttpOper *ControlChannel::CreateOperHello()
 	return hello;
 }
 
-HttpOper *ControlChannel::CreateOperConfig()
+HttpOper *ControlChannel::CreateOperBaseInfo()
 {
-	HttpOper *config;
+	HttpOper *base_info;
 	HttpPara *para;
-	RunningConfigTable running_table;
-	StaticConfigTable static_table;
-	std::string sitename, siteaddr, devaddr;
-	std::string apid, devmodel, detailid;
-	float lon, lat;
 
 	if (!m_runtable_flag)
 		return NULL;
 
-	running_table.GetSiteName(sitename);
-	running_table.GetSiteAddr(siteaddr);
-	running_table.GetDevAddr(devaddr);
-	running_table.GetAppLon(lon);
-	running_table.GetAppLat(lat);
-
-	static_table.GetDevId(apid);
-	static_table.GetDevModel(devmodel);
-	static_table.GetDetailId(detailid);
-	apid += m_mac_no_hyphen;
-
-	config = new HttpOper(OP_BASIC_INFO);
-	if(!config)
+	base_info = new HttpOper(OP_BASIC_INFO);
+	if(!base_info)
 		return NULL;
 
-	config->AddPara(PARA_SITE_NAME, sitename);
-	config->AddPara(PARA_SITE_ADDR, siteaddr);
-	config->AddPara(PARA_AP_ID, apid);
-	config->AddPara(PARA_DEV_MOD, devmodel);
-	config->AddPara(PARA_AP_MAC, m_mac);
-	config->AddPara(PARA_AP_LON, lon);
-	config->AddPara(PARA_AP_LAT, lat);
-	config->AddPara(PARA_DEV_ADDR, devaddr);
-	config->AddPara(PARA_DETAIL_ID, detailid);
+	base_info->AddPara(PARA_SITE_NAME, m_sitename);
+	base_info->AddPara(PARA_SITE_ADDR, m_siteaddr);
+	base_info->AddPara(PARA_AP_ID, m_apid);
+	base_info->AddPara(PARA_DEV_MOD, m_devmodel);
+	base_info->AddPara(PARA_AP_MAC, m_mac);
+	base_info->AddPara(PARA_AP_LON, m_lon);
+	base_info->AddPara(PARA_AP_LAT, m_lat);
+	base_info->AddPara(PARA_DEV_ADDR, m_devaddr);
+	base_info->AddPara(PARA_DETAIL_ID, m_detailid);
+
+	return base_info;
+}
+
+HttpOper *ControlChannel::CreateOperConfig()
+{
+	HttpOper *config = NULL;
+	HttpPara *para;
+	std::map<std::string, int>::iterator itr = m_configResp.begin();
+
+
+	while(itr != m_configResp.end())
+	{
+		std::string name = (std::string)itr->first;
+		int value = (int)itr->second;
+		if(!config) {
+			config = new HttpOper(OP_DEVICE_CONFIG);
+			if(!config)
+				break;
+		}
+		config->AddPara(name, value);
+		itr ++;
+	}
+
+	m_configResp.clear();
 
 	return config;
 }
@@ -498,4 +585,38 @@ void ControlChannel::HandleTimer(std::string &name, void *data)
 	        pthread_mutex_unlock(&m_mutex);
 	    }
 	}
+}
+
+void ControlChannel::UpdateRunningParas()
+{
+	RunningConfigTable running_table;
+
+	running_table.GetFlag(m_runtable_flag);
+	running_table.GetUrl(m_url);
+	running_table.GetSiteName(m_sitename);
+	running_table.GetSiteAddr(m_siteaddr);
+	running_table.GetDevAddr(m_devaddr);
+	running_table.GetAppLon(m_lon);
+	running_table.GetAppLat(m_lat);
+	running_table.GetInvl(m_invl);
+
+	if((m_invl < 10) || (m_invl > 3600))
+		m_invl = 300;
+
+	return;
+}
+
+void ControlChannel::UpdateStaticParas()
+{
+	StaticConfigTable static_table;
+
+	static_table.GetDevId(m_apid);
+	static_table.GetDevModel(m_devmodel);
+	static_table.GetDetailId(m_detailid);
+	m_apid += m_mac_no_hyphen;
+}
+
+void ControlChannel::RunningTableUpdated()
+{
+	m_should_update = 1;
 }

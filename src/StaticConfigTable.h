@@ -35,6 +35,10 @@ public:
 	{
 		return GetStringValue(STATIC_CONFIG_DEV_DETAIL_ID, id);
 	}
+	int GetInstCode(string &code)
+	{
+		return GetStringValue(STATIC_CONFIG_DEV_INST_CODE, code);
+	}
 };
 
 #endif

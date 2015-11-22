@@ -36,6 +36,11 @@ static void _init_supported_paras()
 	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_AP_LON, HTTP_PARA_TYPE_FLOAT));
 	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_AP_LAT, HTTP_PARA_TYPE_FLOAT));
 	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_DEV_ADDR, HTTP_PARA_TYPE_STRING));
+
+	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_UP_INVL, HTTP_PARA_TYPE_INT));
+	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_SRV_CODE, HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_DATA_SERVER, HTTP_PARA_TYPE_STRING));
+	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_CONTROL_SERVER, HTTP_PARA_TYPE_STRING));
 }
 
 HttpPara *HttpPara::CreatePara(string para)
