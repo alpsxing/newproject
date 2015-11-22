@@ -55,7 +55,8 @@ public:
     static void Destroy();
     static int nums;
     pthread_t m_tid;
-    
+    bool m_started;
+
 protected:
     GeneralTimer();
     void Start();
@@ -70,7 +71,6 @@ private:
     void HandleTick(int ticks);
 
     bool m_exit;
-    bool m_started;
     struct timeval m_interval;
     static GeneralTimer *m_instance;
     GeneralTimerList m_timerlist;

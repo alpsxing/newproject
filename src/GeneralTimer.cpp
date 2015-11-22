@@ -55,7 +55,8 @@ int StartTimer(GeneralTimerItem *timer)
 	timer->start_interval.tv_sec = 0;
 	timer->start_interval.tv_usec = 0;
 	GeneralTimer::Instance()->StartTimer(timer);
-	pthread_kill(GeneralTimer::Instance()->m_tid, SIGUSR1);
+	if (GeneralTimer::Instance()->m_started)
+		pthread_kill(GeneralTimer::Instance()->m_tid, SIGUSR1);
 	return 0;
 }
 
@@ -64,7 +65,8 @@ int StopTimer(GeneralTimerItem *timer)
 
     LogUtility::Log(LOG_LEVEL_DEBUG, "StopTimer() timer->name=%s",timer->name.c_str());
 	GeneralTimer::Instance()->StopTimer(timer);
-	pthread_kill(GeneralTimer::Instance()->m_tid, SIGUSR1);
+	if (GeneralTimer::Instance()->m_started)
+		pthread_kill(GeneralTimer::Instance()->m_tid, SIGUSR1);
 	return  0;
 }
 
@@ -98,7 +100,7 @@ void GeneralTimer::Destroy()
 
 GeneralTimer::GeneralTimer()
 {
-    m_exit = false;
+    m_exit = true;
     m_interval.tv_sec = 1;
     m_interval.tv_usec = 0;
     m_started = false;
@@ -123,42 +125,22 @@ GeneralTimer::~GeneralTimer()
 
 void GeneralTimer::Start()
 {
-    if(m_started)
+    if(!m_exit)
     {
         LogUtility::Log(LOG_LEVEL_DEBUG, "GeneralTimer::Start() already started.");
         return;
     }
 
     m_exit = false;
-   #if 0 
-    pthread_attr_t SchedAttr;
-    sched_param SchedParam;  
-    int MidPriority,MaxPriority,MinPriority;  
-    int policy;
-    
-    pthread_attr_init(&SchedAttr);      
-    MaxPriority = sched_get_priority_max(SCHED_RR);     
-    MinPriority = sched_get_priority_min(SCHED_RR);     
-    MidPriority = (MaxPriority + MinPriority)/2;      
-    SchedParam.sched_priority = MidPriority;      
-    pthread_attr_setschedparam(&SchedAttr,&SchedParam);      
-    pthread_attr_setinheritsched(&SchedAttr,PTHREAD_EXPLICIT_SCHED);      
-    pthread_attr_setschedpolicy(&SchedAttr,SCHED_RR);      
 
-    pthread_attr_getschedparam(&SchedAttr,&SchedParam);      
-    pthread_attr_getschedpolicy(&SchedAttr,&policy);      
-    LogUtility::Log(LOG_LEVEL_DEBUG,"GeneralTimer::Start policy=%d proiority=%d \n",policy,SchedParam.sched_priority);
-    #endif 
     pthread_create(&m_tid, NULL, this->ThreadLoop, this);
-    
-    m_started = true;
 
     return;
 }
 
 void GeneralTimer::Stop()
 {
-    if(!m_started)
+    if(m_exit)
     {
         LogUtility::Log(LOG_LEVEL_DEBUG, "GeneralTimer::Start() already started.");
         return;
@@ -169,8 +151,6 @@ void GeneralTimer::Stop()
     pthread_kill(m_tid, SIGUSR1);
 
     pthread_join(m_tid, NULL);
-
-    m_started = false;
 
     return;
 }
@@ -190,6 +170,8 @@ void *GeneralTimer::ThreadLoop(void *arg)
     signal(SIGUSR1,SignalHandler);
     signal(SIGPIPE,SignalHandler);
     
+    generalTimer->m_started = true;
+
     while(!generalTimer->m_exit)
     {
         struct timeval interval = generalTimer->m_interval;

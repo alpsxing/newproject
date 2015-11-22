@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <errno.h>
 #include <fstream>
 #include <vector>
 #include "boost/format.hpp"
@@ -94,11 +95,10 @@ void ControlChannel::ChangeHelloInvl(int invl, int start)
 
 void ControlChannel::Start()
 {
-    if(m_exit == true)
-    {
+    if(m_exit)
         m_exit = false;
+    else
         pthread_create(&m_tid, NULL, this->ThreadLoop, this);
-    }
 
     return;
 }
@@ -122,6 +122,8 @@ void *ControlChannel::ThreadLoop(void *arg)
 	ControlChannel *controlChannel = reinterpret_cast<ControlChannel *> (arg);
 
 	StartTimer(controlChannel->m_helloTimer);
+
+	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel starting...");
 
 	controlChannel->SendRequest(1);
 	while(1)
@@ -158,22 +160,33 @@ void ControlChannel::SendRequest(int first)
 {
 	HttpOper *hello = CreateOperHello();
 	HttpOper *base_info = NULL;
-	HttpOper *config;
+	HttpOper *config = NULL;
 	HttpBody http_body;
 	unsigned short response_status;
 	std::string response_body;
 	HttpBody *resp;
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel send request...");
+
 	if(!hello)
+	{
+		LogUtility::Log(LOG_LEVEL_ERROR, "ControlChannel failed to create hello oper.");
 		return;
+	}
 	if(first || m_send_base_info)
+	{
+		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel create base info oper");
 		base_info = CreateOperBaseInfo();
+	}
 	if(m_configResp.size())
+	{
+		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel create dev config oper");
 		config = CreateOperConfig();
+	}
 	http_body.AddOper(hello);
-	if(!base_info)
+	if(base_info)
 		http_body.AddOper(base_info);
-	if(!config)
+	if(config)
 		http_body.AddOper(config);
 
 
@@ -184,22 +197,31 @@ void ControlChannel::SendRequest(int first)
 	{
 		std::string body_string = http_body.ToString();
 		http::client::request request(m_url);
+		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel sending to %s %s", m_url.c_str(), body_string.c_str());
 		request << header("Content-Type", "application/x-www-form-urlencoded");
 		request << header("Content-Length", numToString<unsigned int>((unsigned int)body_string.length()));
 		request << body(http_body.ToString());
 		http::client::response response = client.post(request);
 		response_status = http::status(response);
 		if(response_status != 200)
+		{
+			LogUtility::Log(LOG_LEVEL_WARN, "ControlChannel response status(%u) is not ok", response_status);
 			return;
+		}
 		response_body = body(response);
+		m_send_base_info= 0;
 	} catch (std::exception &e)
 	{
+		LogUtility::Log(LOG_LEVEL_WARN, "ControlChannel get response failed with exception");
 		return;
 	}
 
 	resp = HttpBody::CreateBody(response_body);
 	if(!resp)
+	{
+		LogUtility::Log(LOG_LEVEL_WARN, "ControlChannel response parsed failed");
 		return;
+	}
 
 	ProcessResponse(resp);
 
@@ -384,15 +406,21 @@ void ControlChannel::UpdateMac(std::string dev_name)
 	int sock;
 	const unsigned char* mac;
 
+	LogUtility::Log(LOG_LEVEL_DEBUG, "Update mac...");
+
 	memset(m_ap_mac, 0, sizeof(m_ap_mac));
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sock = -1)
+	if(sock == -1)
+	{
+		LogUtility::Log(LOG_LEVEL_ERROR, "Fail to create socket %d.", errno);
 		goto MAKESTRING;
+	}
 	strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
 
 	if (ioctl(sock, SIOCGIFHWADDR, &ifr)==-1) {
 	    close(sock);
+		LogUtility::Log(LOG_LEVEL_ERROR, "Fail to ioctl.");
 	    goto MAKESTRING;
 	}
 
@@ -406,7 +434,7 @@ MAKESTRING:
 	for(int i = 0; i < 6; i ++)
 	{
 		format fmtr("%02X");
-		if(!i)
+		if(i)
 			m_mac += "-";
 		fmtr % (unsigned int)m_ap_mac[i];
 		m_mac += fmtr.str();
@@ -600,6 +628,9 @@ void ControlChannel::UpdateRunningParas()
 	running_table.GetAppLat(m_lat);
 	running_table.GetInvl(m_invl);
 
+	trim(m_url);
+	if(m_url.find("http://") == std::string::npos)
+		m_url = "http://" + m_url;
 	if((m_invl < 10) || (m_invl > 3600))
 		m_invl = 300;
 
@@ -619,4 +650,5 @@ void ControlChannel::UpdateStaticParas()
 void ControlChannel::RunningTableUpdated()
 {
 	m_should_update = 1;
+	m_send_base_info = 1;
 }

@@ -193,8 +193,9 @@ void WebServer::CreateResponse(std::string &result)
 	oper.AddPara(PARA_DEV_MOD, devmodel);
 	oper.AddPara(PARA_DETAIL_ID, detailid);
 	oper.AddPara("inst_code", instcode);
+	oper.AddPara(PARA_ID, CONTROL_INSTANCE->GetMac());
 
-	result += oper.ToString();
+	result = oper.ToString();
 
 	return;
 }

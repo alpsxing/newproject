@@ -3,6 +3,7 @@
 #include <boost/program_options.hpp>
 #include "LogUtility.h"
 #include "WebServer.h"
+#include "ControlChannel.h"
 
 namespace po = boost::program_options;
 
@@ -68,7 +69,11 @@ int main(int argc, char **argv)
 	    return 1;
 	}
 
+	CONTROL_INSTANCE->Start();
+
 	WebServer::Run(_web_server_addr, _web_server_port);
+
+	CONTROL_INSTANCE->Stop();
 
     return 0;
 }

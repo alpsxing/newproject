@@ -25,6 +25,11 @@ public:
 	void ChangeHelloInvl(int invl, int start);
 	void RunningTableUpdated();
 
+	std::string GetMac()
+	{
+		return m_mac;
+	}
+
 protected:
 	ControlChannel();
 private:

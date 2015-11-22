@@ -36,9 +36,9 @@ protected:
         char *path;
         
         if(important)
-            path = getenv("INNOV_IMPORTANT_TABLE_DIR");
+            path = getenv("SQLITE_IMPORTANT_TABLE_DIR");
         else
-            path = getenv("INNOV_TABLE_DIR");
+            path = getenv("SQLITE_TABLE_DIR");
         
         if(path)
         {
