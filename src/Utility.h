@@ -311,4 +311,12 @@ private:
 #define MINUTE_ALINE(t)               ((t) / 60 * 60)
 #define HOUR_ALINE(t)                 ((t) / 3600 * 3600)
 
+inline void ToEncrypt(std::string &src)
+{
+	for(int i = 0; i < src.size(); i ++)
+	{
+		src[i] = src[i]^0x88;
+	}
+}
+
 #endif

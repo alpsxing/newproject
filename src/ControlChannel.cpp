@@ -200,7 +200,8 @@ void ControlChannel::SendRequest(int first)
 		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel sending to %s %s", m_url.c_str(), body_string.c_str());
 		request << header("Content-Type", "application/x-www-form-urlencoded");
 		request << header("Content-Length", numToString<unsigned int>((unsigned int)body_string.length()));
-		request << body(http_body.ToString());
+		ToEncrypt(body_string);
+		request << body(body_string);
 		http::client::response response = client.post(request);
 		response_status = http::status(response);
 		if(response_status != 200)
@@ -209,6 +210,7 @@ void ControlChannel::SendRequest(int first)
 			return;
 		}
 		response_body = body(response);
+		ToEncrypt(response_body);
 		m_send_base_info= 0;
 	} catch (std::exception &e)
 	{
