@@ -9,6 +9,7 @@ SRCS_CXX = LogUtility.cpp \
            RunningConfigTable.cpp \
            WebServer.cpp \
            ScanRecord.cpp \
+           MacRecord.cpp \
            main.cpp
 
 HEADS = Utility.h \
@@ -22,7 +23,8 @@ HEADS = Utility.h \
         ControlChannel.h \
         RunningConfigTable.h \
         WebServer.h \
-        ScanRecord.h
+        ScanRecord.h \
+        MacRecord.h
 
 TARGET = new_project
 

@@ -34,7 +34,13 @@ int ScanRecordHash::AddRecord(struct list_head *rec)
 	{
 		if(m_hashkey->IsKeySame(pos, rec))
 		{
-			DeleteRecord(pos);
+			struct list_head *chosen = m_hashkey->Choose(pos, rec);
+			if (chosen != pos)
+				DeleteRecord(pos);
+			else if (chosen != rec)
+				LogUtility::Log(LOG_LEVEL_ERROR, "ScanRecordHash::AddRecord chosen invalid\n");
+			else
+				m_hashkey->Free(rec);
 			break;
 		}
 	}
