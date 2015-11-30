@@ -13,6 +13,7 @@
 #include "RunningConfigTable.h"
 #include "StaticConfigTable.h"
 #include "ControlChannel.h"
+#include "DataChannel.h"
 #include <boost/network/protocol/http/client.hpp>
 
 using boost::format;
@@ -350,6 +351,7 @@ void ControlChannel::ProcessDeviceConfigResponse(HttpOper *oper)
 	HttpParaMap *paras = oper->GetParas();
 	HttpParaMap::iterator itr = paras->begin();
 	RunningConfigTable table;
+	int data_channel_changed = 0;
 
 	m_configResp.clear();
 
@@ -362,9 +364,8 @@ void ControlChannel::ProcessDeviceConfigResponse(HttpOper *oper)
 			int invl = GetHttpParaValueInt(para->GetValue());
 			if((invl > 10) && (invl < 3600))
 			{
-				RunningConfigTable table;
 				table.SetUpInvl(invl);
-				table.Commit();
+				data_channel_changed = 1;
 			}
 		}
 		else if(!name.compare(PARA_SRV_CODE))
@@ -379,7 +380,10 @@ void ControlChannel::ProcessDeviceConfigResponse(HttpOper *oper)
 			std::string url = "";
 			GetHttpParaValueString(para->GetValue(), url);
 			if(!url.empty())
+			{
 				table.SetDataUrl(url);
+				data_channel_changed = 1;
+			}
 		}
 		else if(!name.compare(PARA_CONTROL_SERVER))
 		{
@@ -398,6 +402,9 @@ void ControlChannel::ProcessDeviceConfigResponse(HttpOper *oper)
 	table.Commit();
 
 	m_should_update = 1;
+
+	if(data_channel_changed)
+		DATA_INSTANCE->RunningTableUpdated();
 
 	return;
 }

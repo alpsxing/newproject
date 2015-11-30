@@ -4,6 +4,7 @@
 #include "LogUtility.h"
 #include "WebServer.h"
 #include "ControlChannel.h"
+#include "DataChannel.h"
 
 namespace po = boost::program_options;
 
@@ -70,6 +71,7 @@ int main(int argc, char **argv)
 	}
 
 	CONTROL_INSTANCE->Start();
+	DATA_INSTANCE->Start();
 
 	WebServer::Run(_web_server_addr, _web_server_port);
 
