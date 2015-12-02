@@ -32,7 +32,11 @@ private:
 
 	static void *ThreadLoop(void *arg);
 	void UpdateRunningParas();
-	void UpdateTxTimer();
+	void UpdateTxTimer(int invl);
+	int Connect();
+	void Close();
+	int Send();
+
     bool m_exit;
     pthread_t m_tid;
     pthread_mutex_t m_mutex;
@@ -40,6 +44,8 @@ private:
 
     int m_should_update;
     int m_should_send;
+
+    int m_socket;
 
     GeneralTimerItem *m_txTimer;
 

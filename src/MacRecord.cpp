@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "MacRecord.h"
 #include "LogUtility.h"
+#include "ControlChannel.h"
 
 MacRecordTable *MacRecordTable::m_instance = NULL;
 
@@ -26,7 +27,8 @@ void MacRecordTable::Destroy()
 MacRecordTable::MacRecordTable()
 	: m_table(this)
 {
-	;
+	m_buf = NULL;
+	m_index = 0;
 }
 
 unsigned int MacRecordTable::GetHash(struct list_head *rec, int bucket_size)
@@ -85,4 +87,46 @@ void MacRecordTable::UpdateMacRecord(MacRecord *rec)
 	memcpy(&macRecord->rec, rec, sizeof(MacRecord));
 	INIT_LIST_HEAD(&macRecord->node);
 	m_table.AddRecord(&macRecord->node);
+}
+
+int MacRecordTable::PrepareBuffer(int number)
+{
+	int index;
+	unsigned char mac[6];
+	if(number <= 0)
+		return -1;
+	if(m_buf)
+		free(m_buf);
+	m_buf = (unsigned char *)malloc(MAC_HEAD_LENGTH + MAC_RECORD_LENGTH * number);
+	if(!m_buf)
+		return -1;
+	m_index = 0;
+	PushWord(m_buf, m_index, 0x01);
+	CONTROL_INSTANCE->GetMac(mac);
+	for(int i = 0; i < 6; i ++)
+		PushByte(m_buf, m_index, mac[i]);
+	PushWord(m_buf, m_index, 0x01);
+	PushLong(m_buf, m_index, MAC_RECORD_LENGTH * number);
+}
+
+void MacRecordTable::DumpRecord(struct list_head *rec)
+{
+	struct MacRecordNode *macRecord = list_entry(rec, struct MacRecordNode, node);
+	PushWord(m_buf, m_index, 0x00);
+	PushWord(m_buf, m_index, macRecord->rec.type);
+	for(int i = 0; i < 6; i ++)
+		PushByte(m_buf, m_index, macRecord->rec.mac[i]);
+	PushByte(m_buf, m_index, macRecord->rec.max_signal);
+	PushByte(m_buf, m_index, macRecord->rec.latest_signal);
+	PushLong(m_buf, m_index, (unsigned int)macRecord->rec.time);
+}
+
+unsigned char *MacRecordTable::GetRecord(int &len)
+{
+	if(m_buf)
+		free(m_buf);
+	m_index = 0;
+	m_table.DumpRecord(1);
+	len = m_index;
+	return m_buf;
 }

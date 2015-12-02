@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <pthread.h>
+#include <string.h>
 #include "GeneralTimer.h"
 #include "HTTPBody.h"
 
@@ -28,6 +29,11 @@ public:
 	std::string GetMac()
 	{
 		return m_mac;
+	}
+
+	void GetMac(unsigned char *mac)
+	{
+		memcpy(mac, m_ap_mac, 6);
 	}
 
 protected:

@@ -4,6 +4,7 @@
 ScanRecordHash::ScanRecordHash(RecordHashGenerator *hashkey, unsigned int bucket_size)
 	: m_table(bucket_size), m_hashkey(hashkey)
 {
+	m_number = 0;
 	for(int i = 0; i < m_table.size(); i ++)
 		INIT_LIST_HEAD(&m_table[i]);
 
@@ -38,10 +39,14 @@ int ScanRecordHash::AddRecord(struct list_head *rec)
 			if (chosen != pos)
 				DeleteRecord(pos);
 			else if (chosen != rec)
-				LogUtility::Log(LOG_LEVEL_ERROR, "ScanRecordHash::AddRecord chosen invalid\n");
-			else
 				m_hashkey->Free(rec);
+			else
+				LogUtility::Log(LOG_LEVEL_ERROR, "ScanRecordHash::AddRecord chosen invalid\n");
 			break;
+		}
+		else
+		{
+			m_number ++;
 		}
 	}
 
@@ -63,6 +68,7 @@ void ScanRecordHash::Clear()
 		}
 		INIT_LIST_HEAD(head);
 	}
+	m_number = 0;
 	pthread_mutex_unlock(&m_mutex);
 }
 
@@ -70,4 +76,29 @@ void ScanRecordHash::DeleteRecord(struct list_head *rec)
 {
 	list_del(rec);
 	m_hashkey->Free(rec);
+}
+
+void ScanRecordHash::DumpRecord(int clean)
+{
+	pthread_mutex_lock(&m_mutex);
+	if((m_number <= 0) || (m_hashkey->PrepareBuffer(m_number) < 0))
+	{
+		pthread_mutex_unlock(&m_mutex);
+		return;
+	}
+
+	for(int i = 0; i < m_table.size(); i ++)
+	{
+		struct list_head *head = &m_table[i];
+		struct list_head *pos, *n;
+		list_for_each_safe(pos, n, head)
+		{
+			m_hashkey->DumpRecord(pos);
+			if(clean)
+				DeleteRecord(pos);
+		}
+		INIT_LIST_HEAD(head);
+	}
+	m_number = 0;
+	pthread_mutex_unlock(&m_mutex);
 }

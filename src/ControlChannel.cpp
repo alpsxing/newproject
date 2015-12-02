@@ -127,6 +127,8 @@ void *ControlChannel::ThreadLoop(void *arg)
 	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel starting...");
 
 	controlChannel->SendRequest(1);
+
+	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel loop...");
 	while(1)
 	{
 		pthread_mutex_lock(&controlChannel->m_mutex);
