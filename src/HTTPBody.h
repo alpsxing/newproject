@@ -20,6 +20,7 @@ using namespace std;
 #define OP_HEARTBEAT     0
 #define OP_BASIC_INFO    42
 #define OP_DEVICE_CONFIG 26
+#define OP_SYSTEM_COMMAND 31
 
 #define OP_LOCAL         200
 
@@ -45,11 +46,15 @@ using namespace std;
 #define PARA_DEV_ADDR          "dev_addr"
 #define PARA_DETAIL_ID         "detail_id"
 #define PARA_SITE_ID           "site_id"
+#define PARA_DEV_NAME          "dev_name"
 
 #define PARA_UP_INVL           "up_invl"
 #define PARA_SRV_CODE          "srv_code"
 #define PARA_DATA_SERVER       "data_recv_srv"
 #define PARA_CONTROL_SERVER    "cntl_recv_srv"
+
+#define PARA_CMD               "cmd"
+#define PARA_RES               "res"
 
 typedef enum
 {

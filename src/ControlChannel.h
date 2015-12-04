@@ -13,6 +13,7 @@ using namespace std;
 #define CONTROL_INSTANCE ControlChannel::Instance()
 
 #define HELLO_TIMER_NAME      "hellotimer"
+#define REBOOT_TIMER_NAME     "reboottimer"
 
 class ControlChannel
 {
@@ -45,15 +46,18 @@ private:
 	HttpOper *CreateOperHello();
 	HttpOper *CreateOperBaseInfo();
 	HttpOper *CreateOperConfig();
+	HttpOper *CreateOperSysCmd();
 	void SendRequest(int first);
 	void ProcessResponse(HttpBody *resp);
 	void ProcessHelloResponse(HttpOper *oper);
 	void ProcessBaseInfoResponse(HttpOper *oper);
 	void ProcessDeviceConfigResponse(HttpOper *oper);
+	void ProcessSysCommandResponse(HttpOper *oper);
 	void UpdateRunningParas();
 	void UpdateStaticParas();
 
 	std::map<std::string, int> m_configResp;
+	std::map<std::string, std::string> m_syscmdResp;
 
 	string m_mac;
 	string m_mac_no_hyphen;
@@ -94,6 +98,7 @@ private:
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
     GeneralTimerItem *m_helloTimer;
+    GeneralTimerItem *m_rebootTimer;
 
 	static ControlChannel *m_instance;
 };

@@ -27,17 +27,33 @@ public:
 	{
 		return GetStringValue(STATIC_CONFIG_DEV_ID, id);
 	}
+	int SetDevId(string &id)
+	{
+		return SetStringValue(STATIC_CONFIG_DEV_ID, id);
+	}
 	int GetDevModel(string &model)
 	{
 		return GetStringValue(STATIC_CONFIG_DEV_MODEL, model);
+	}
+	int SetDevModel(string &model)
+	{
+		return SetStringValue(STATIC_CONFIG_DEV_MODEL, model);
 	}
 	int GetDetailId(string &id)
 	{
 		return GetStringValue(STATIC_CONFIG_DEV_DETAIL_ID, id);
 	}
+	int SetDetailId(string &id)
+	{
+		return SetStringValue(STATIC_CONFIG_DEV_DETAIL_ID, id);
+	}
 	int GetInstCode(string &code)
 	{
 		return GetStringValue(STATIC_CONFIG_DEV_INST_CODE, code);
+	}
+	int SetInstCode(string &code)
+	{
+		return SetStringValue(STATIC_CONFIG_DEV_INST_CODE, code);
 	}
 };
 

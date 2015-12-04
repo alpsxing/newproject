@@ -208,7 +208,8 @@ inline string GetTime(long long itime, char slash, bool with_sec)
     
     localtime_r(&ttime, &p);
     lt = &p;
-    strtime = numToString((unsigned char)(lt->tm_year % 100));
+    strtime = "20";
+    strtime += numToString((unsigned char)(lt->tm_year % 100));
     strtime += numToString((unsigned char)(lt->tm_mon + 1));
     strtime += numToString((unsigned char)(lt->tm_mday));
     if(slash)
