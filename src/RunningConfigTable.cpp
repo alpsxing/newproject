@@ -14,7 +14,7 @@ const static SQLiteColumn VDRRunningConfigCols[RUNNING_CONFIG_BUTT] = {
     SQLiteColumn("UpInvl",        ENUM_SQLite_COLUMN_INTEGER,      true, false, false, false, false, SQLiteValue(300)),
     SQLiteColumn("SrvCode",       ENUM_SQLite_COLUMN_STRING,       true, false, false, false, false, SQLiteValue("MyCode")),
     SQLiteColumn("DataSrv",       ENUM_SQLite_COLUMN_STRING,       true, false, false, false, false, SQLiteValue("127.0.0.1:6000")),
-    SQLiteColumn("Flag",          ENUM_SQLite_COLUMN_INTEGER,      true, false, false, false, false, SQLiteValue(0)),
+    SQLiteColumn("Flag",          ENUM_SQLite_COLUMN_INTEGER,      true, false, false, false, false, SQLiteValue(1)),
 };
 
 RunningConfigTable::RunningConfigTable():
