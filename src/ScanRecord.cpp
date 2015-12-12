@@ -37,20 +37,28 @@ int ScanRecordHash::AddRecord(struct list_head *rec)
 		{
 			struct list_head *chosen = m_hashkey->Choose(pos, rec);
 			if (chosen != pos)
+			{
 				DeleteRecord(pos);
+				list_add(rec, head);
+			}
 			else if (chosen != rec)
 				m_hashkey->Free(rec);
 			else
+			{
 				LogUtility::Log(LOG_LEVEL_ERROR, "ScanRecordHash::AddRecord chosen invalid\n");
+				m_hashkey->Free(rec);
+			}
 			break;
-		}
-		else
-		{
-			m_number ++;
 		}
 	}
 
-	list_add(rec, head);
+	/* First entry for this key */
+	if(pos == head)
+	{
+		list_add(rec, head);
+		m_number ++;
+	}
+
 	pthread_mutex_unlock(&m_mutex);
 	return 0;
 }
