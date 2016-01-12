@@ -31,6 +31,12 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
 make
 make install
 
+5 libnl
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
+./configure --prefix=<dir>
+make
+make install
+
 For cross compile:
 1. Sqlite:
 cd sqlite-autoconf-3090200
@@ -63,5 +69,12 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
       -DBOOST_ROOT=<boost_dir> \
       -DCMAKE_INSTALL_PREFIX=<dir> \
       ..
+make
+make install
+
+5 libnl
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
+export PATH=<PATH TO COMPILER>:$PATH
+./configure --prefix=<dir> --host=arm-linux-gnueabi
 make
 make install
