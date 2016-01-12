@@ -5,6 +5,7 @@
 #include "WebServer.h"
 #include "ControlChannel.h"
 #include "DataChannel.h"
+#include "CollectChannel.h"
 
 namespace po = boost::program_options;
 
@@ -72,10 +73,13 @@ int main(int argc, char **argv)
 
 	CONTROL_INSTANCE->Start();
 	DATA_INSTANCE->Start();
+	COLLECT_INSTANCE->Start();
 
 	WebServer::Run(_web_server_addr, _web_server_port);
 
 	CONTROL_INSTANCE->Stop();
+	DATA_INSTANCE->Stop();
+	COLLECT_INSTANCE->Stop();
 
     return 0;
 }

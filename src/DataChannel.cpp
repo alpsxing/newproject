@@ -100,7 +100,7 @@ void DataChannel::UpdateTxTimer(int invl)
 {
 	if(m_txTimer)
 		DestroyTimer(m_txTimer);
-	m_txTimer = CreateTimer(TX_TIMER_NAME, TIMER_SEC_TO_MSEC(invl), this, DataChannelTimerHandler, false);
+	m_txTimer = CreateTimer(TX_TIMER_NAME, TIMER_SEC_TO_MSEC(invl), this, DataChannelTimerHandler, true);
 	StartTimer(m_txTimer);
 }
 
@@ -143,18 +143,18 @@ void *DataChannel::ThreadLoop(void *arg)
 		if(dataChannel->m_should_send)
 		{
 			dataChannel->m_should_send = 0;
-			dataChannel->UpdateTxTimer(dataChannel->m_invl);
+			//dataChannel->UpdateTxTimer(dataChannel->m_invl);
 			pthread_mutex_unlock(&dataChannel->m_mutex);
 			if(dataChannel->Connect() < 0)
 			{
 				LogUtility::Log(LOG_LEVEL_WARN, "DataChannel connect failed");
-				dataChannel->UpdateTxTimer(10);
+				//dataChannel->UpdateTxTimer(10);
 				continue;
 			}
 			if(dataChannel->Send()< 0)
 			{
 				LogUtility::Log(LOG_LEVEL_WARN, "DataChannel send failed");
-				dataChannel->UpdateTxTimer(10);
+				//dataChannel->UpdateTxTimer(10);
 			}
 			dataChannel->Close();
 		}
@@ -278,7 +278,7 @@ int DataChannel::Connect()
                     {
                         LogUtility::Log(LOG_LEVEL_INFO, "DataChannel::Connect got a signal.");
                         Close();
-                        return 1;
+                        return -1;
                     }
                     else
                     {
@@ -376,6 +376,8 @@ int DataChannel::Send()
 		    totalSent += ret;
 	    }
     }while(totalSent < len);
+    
+    LogUtility::Log(LOG_LEVEL_DEBUG, "DataChannel::Send totallen %d.", totalSent);
 
     return totalSent;
 }

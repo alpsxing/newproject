@@ -95,8 +95,13 @@ int MacRecordTable::PrepareBuffer(int number)
 	unsigned char mac[6];
 	if(number <= 0)
 		return -1;
+
 	if(m_buf)
+	{
 		free(m_buf);
+        m_buf = NULL;
+    }
+
 	m_buf = (unsigned char *)malloc(MAC_HEAD_LENGTH + MAC_RECORD_LENGTH * number);
 	if(!m_buf)
 		return -1;
@@ -107,6 +112,7 @@ int MacRecordTable::PrepareBuffer(int number)
 		PushByte(m_buf, m_index, mac[i]);
 	PushWord(m_buf, m_index, 0x01);
 	PushLong(m_buf, m_index, MAC_RECORD_LENGTH * number);
+    return 0;
 }
 
 void MacRecordTable::DumpRecord(struct list_head *rec)
@@ -119,13 +125,13 @@ void MacRecordTable::DumpRecord(struct list_head *rec)
 	PushByte(m_buf, m_index, macRecord->rec.max_signal);
 	PushByte(m_buf, m_index, macRecord->rec.latest_signal);
 	PushLong(m_buf, m_index, (unsigned int)macRecord->rec.time);
+    LogUtility::Log(LOG_LEVEL_DEBUG, "type=%d,%02x:%02x:%02x:%02x:%02x:%02x, %d, %d, %d",macRecord->rec.type,macRecord->rec.mac[0],macRecord->rec.mac[1],macRecord->rec.mac[2],
+        macRecord->rec.mac[3],macRecord->rec.mac[4],macRecord->rec.mac[5],macRecord->rec.max_signal,macRecord->rec.latest_signal,(int)macRecord->rec.time);
 }
 
 unsigned char *MacRecordTable::GetRecord(int &len)
 {
-	if(m_buf)
-		free(m_buf);
-	m_index = 0;
+    m_index = 0;
 	m_table.DumpRecord(1);
 	len = m_index;
 	return m_buf;

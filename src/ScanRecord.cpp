@@ -88,6 +88,7 @@ void ScanRecordHash::DeleteRecord(struct list_head *rec)
 
 void ScanRecordHash::DumpRecord(int clean)
 {
+	LogUtility::Log(LOG_LEVEL_DEBUG, "ScanRecordHash DumpRecord number=%d",m_number);
 	pthread_mutex_lock(&m_mutex);
 	if((m_number <= 0) || (m_hashkey->PrepareBuffer(m_number) < 0))
 	{

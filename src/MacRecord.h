@@ -8,8 +8,8 @@ typedef struct
 {
 	unsigned char mac[6];
 	unsigned short type;
-	unsigned char max_signal;
-	unsigned char latest_signal;
+	char max_signal;
+	char latest_signal;
 	time_t time;
 }MacRecord;
 
@@ -49,11 +49,12 @@ private:
 	unsigned char *m_buf;
 	int m_index;
 
-#define ENCRYPT(byte)   ((byte) ^ 0x88)
+#define ENCRYPT(byte)   ((byte) ^ 0x66)
 
     inline void PushByte(unsigned char *buf, int &index, unsigned char byte)
     {
     	buf[index] = ENCRYPT(byte);
+        index++;
     }
 
     inline void PushWord(unsigned char *buf, int &index, unsigned short word)

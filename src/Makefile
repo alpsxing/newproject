@@ -11,6 +11,7 @@ SRCS_CXX = LogUtility.cpp \
            ScanRecord.cpp \
            MacRecord.cpp \
            DataChannel.cpp \
+           CollectChannel.cpp \
            main.cpp
 
 HEADS = Utility.h \
@@ -26,6 +27,7 @@ HEADS = Utility.h \
         WebServer.h \
         ScanRecord.h \
         DataChannel.h \
+        CollectChannel.h \
         MacRecord.h
 
 TARGET = new_project
