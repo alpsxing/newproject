@@ -1,3 +1,51 @@
+For x86:
+export CFLAGS=-m32
+export LDFLAGS=-m32
+export CPPFLAGS=-m32
+
+1. Sqlite:
+cd sqlite-autoconf-3090200
+setarch i386 ./config --prefix=<dir> -m32 shared
+make
+make install
+
+2. openssl:
+cd openssl-1.0.2d
+./Configure --prefix=<dir> linux-generic32 shared
+make
+make install
+
+3. boost:
+cd boost_1_59_0
+./bootstrap.sh
+./b2 --prefix=<dir> address-model=32 install
+
+4. cpp-netlib
+cd cpp-netlib-0.11.2-final
+mkdir cpp-netlib-build
+cd cpp-netlib-build
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
+cmake -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_COMPILER=gcc \
+      -DCMAKE_CXX_COMPILER=g++ \
+      -DCMAKE_CXX_FLAGS=-m32 \
+      -DCMAKE_C_FLAGS=-m32 \
+      -DBOOST_ROOT=<dir> \
+      -DCMAKE_INSTALL_PREFIX=<dir> \
+      ..
+make
+make install
+
+5. libnl
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>
+./configure --prefix=<dir>
+make
+make install
+
+cd aircrack-ng-1.2-rc3
+make
+./install.sh  <installdir>
+
 For x86-64:
 
 1. Sqlite:
@@ -15,7 +63,7 @@ make install
 3. boost:
 cd boost_1_59_0
 ./bootstrap.sh
-./b2 --prefix=<dir>
+./b2 --prefix=<dir> install
 
 4. cpp-netlib
 cd cpp-netlib-0.11.2-final
@@ -39,6 +87,7 @@ make install
 
 6. aircrack-ng
 cd aircrack-ng-1.2-rc3
+export PKG_CONFIG_PATH=<openssl lib pkgconfig path>:<libnl lib pkgconfig path>
 make
 ./install.sh  <installdir>
 

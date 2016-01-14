@@ -1,8 +1,15 @@
+ifneq (,$(findstring x86_64, $(shell uname -a)))
 ARCH ?= x86_64
+HOSTARCH = x86_64
+else
+ARCH ?= x86
+HOSTARCH = x86
+endif
 BASE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 MAKEFILE_DIR := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 EXTERNAL_DIR := $(BASE_DIR)external
 EXTERNAL_LIB_DIR := $(EXTERNAL_DIR)/lib/$(ARCH)
+
 BOOST_DIR := $(EXTERNAL_LIB_DIR)/boost
 OPENSSL_DIR := $(EXTERNAL_LIB_DIR)/openssl
 SQLITE_DIR := $(EXTERNAL_LIB_DIR)/sqlite
@@ -12,15 +19,25 @@ INSTALL_DIR = $(BASE_DIR)install
 ARICRACK_DIR = $(EXTERNAL_LIB_DIR)/aircrack-ng
 LIBNL_DIR = $(EXTERNAL_LIB_DIR)/libnl
 
+CFLAGS=
+LDFLAGS=
 ifeq ($(ARCH), x86_64)
 CC=gcc
 CXX=g++
 NETLIBDIR=x86_64-linux-gnu
+ifeq ($(HOSTARCH), x86)
+$(error Can not build x86_64 on x86 host))
+endif
 else
-ifeq ($(ARCH), arm)
-CC=arm-linux-gnueabi-gcc
-CXX=arm-linux-gnueabi-g++
-NETLIBDIR=
+ifeq ($(ARCH), x86)
+$(info Building x86 on x86_64 host)
+CC=gcc
+CXX=g++
+ifeq ($(HOSTARCH), x86_64)
+CFLAGS += -m32
+LDFLAGS += -m32
+endif
+NETLIBDIR=i386-linux-gnu
 else
 ifeq ($(ARCH), bbb)
 CC=$(TOOLS_DIR)/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux/bin/arm-linux-gnueabihf-gcc
@@ -33,12 +50,12 @@ endif
 endif
 
 SOURCE_DIR = $(BASE_DIR)src
-CFLAGS = -I$(BOOST_DIR)/include -I/$(OPENSSL_DIR)/include -I/$(ARICRACK_DIR)/include
+CFLAGS += -I$(BOOST_DIR)/include -I/$(OPENSSL_DIR)/include -I/$(ARICRACK_DIR)/include
 CFLAGS += -I$(SQLITE_DIR)/include -I$(CPP_NETLIB_DIR)/include
 CFLAGS += -I$(LIBNL_DIR)/include
 CFLAGS += -fpermissive
 
-LDFLAGS = -L$(CPP_NETLIB_DIR)/lib/$(NETLIBDIR)
+LDFLAGS += -L$(CPP_NETLIB_DIR)/lib/$(NETLIBDIR)
 LDFLAGS += -L$(BOOST_DIR)/lib
 LDFLAGS += -L$(OPENSSL_DIR)/lib -L$(SQLITE_DIR)/lib -L$(ARICRACK_DIR)/lib
 LDFLAGS += -L$(LIBNL_DIR)/lib
