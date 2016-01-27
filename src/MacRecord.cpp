@@ -117,6 +117,9 @@ int MacRecordTable::PrepareBuffer(int number)
 
 void MacRecordTable::DumpRecord(struct list_head *rec)
 {
+    int ilen=0, i=0;
+    string ch;
+        
 	struct MacRecordNode *macRecord = list_entry(rec, struct MacRecordNode, node);
 	PushWord(m_buf, m_index, 0x00);
 	PushWord(m_buf, m_index, macRecord->rec.type);
@@ -125,14 +128,80 @@ void MacRecordTable::DumpRecord(struct list_head *rec)
 	PushByte(m_buf, m_index, macRecord->rec.max_signal);
 	PushByte(m_buf, m_index, macRecord->rec.latest_signal);
 	PushLong(m_buf, m_index, (unsigned int)macRecord->rec.time);
+    if(macRecord->rec.type == 2)
+    {
+        ilen = strlen( macRecord->rec.essid);
+        if(ilen > 0)
+        {
+            PushWord(m_buf, m_index, 0x06);
+            PushWord(m_buf, m_index, ilen);
+            for( i = 0; i < ilen; i ++)
+                PushByte(m_buf, m_index, macRecord->rec.essid[i]);
+        }
+        PushWord(m_buf, m_index, 0x07);
+        PushWord(m_buf, m_index, 12);
+        for(i = 0; i < 6; i ++)
+        {
+            ch = hexToString(macRecord->rec.bssid[i]);
+            PushByte(m_buf, m_index, ch[0]);
+            PushByte(m_buf, m_index, ch[1]);
+        }
+        
+        PushWord(m_buf, m_index, 0x08);
+        PushWord(m_buf, m_index, 2);
+        ch = numToString(macRecord->rec.channel);
+        PushByte(m_buf, m_index, ch[0]);
+        PushByte(m_buf, m_index, ch[1]);
+        PushWord(m_buf, m_index, 0x09);
+        PushWord(m_buf, m_index, 2);
+		PushByte(m_buf, m_index, macRecord->rec.security[0]);
+		PushByte(m_buf, m_index, macRecord->rec.security[1]);
+		
+    }
+    else if(macRecord->rec.type == 1)
+    {
+        ilen = strlen( macRecord->rec.essid);
+        if(ilen > 0)
+        {
+            PushWord(m_buf, m_index, 0x06);
+            PushWord(m_buf, m_index, ilen);
+            for( i = 0; i < ilen; i ++)
+                PushByte(m_buf, m_index, macRecord->rec.essid[i]);
+        }
+        if(memcmp( macRecord->rec.bssid, BROADCAST, 6 ) !=0  && memcmp( macRecord->rec.bssid, NULL_MAC, 6 ) !=0)
+        {
+            PushWord(m_buf, m_index, 0x07);
+            PushWord(m_buf, m_index, 12);
+            for(i = 0; i < 6; i ++)
+            {
+                ch = hexToString(macRecord->rec.bssid[i]);
+                PushByte(m_buf, m_index, ch[0]);
+                PushByte(m_buf, m_index, ch[1]);
+            }
+            PushWord(m_buf, m_index, 0x08);
+            PushWord(m_buf, m_index, 2);
+            ch = numToString(macRecord->rec.channel);
+            PushByte(m_buf, m_index, ch[0]);
+            PushByte(m_buf, m_index, ch[1]);         
+        }
+
+    }
     LogUtility::Log(LOG_LEVEL_DEBUG, "type=%d,%02x:%02x:%02x:%02x:%02x:%02x, %d, %d, %d",macRecord->rec.type,macRecord->rec.mac[0],macRecord->rec.mac[1],macRecord->rec.mac[2],
         macRecord->rec.mac[3],macRecord->rec.mac[4],macRecord->rec.mac[5],macRecord->rec.max_signal,macRecord->rec.latest_signal,(int)macRecord->rec.time);
 }
 
-unsigned char *MacRecordTable::GetRecord(int &len)
+unsigned char *MacRecordTable::GetRecord(int &len, int &num)
 {
     m_index = 0;
-	m_table.DumpRecord(1);
+	num = m_table.DumpRecord(1);
 	len = m_index;
+    if(m_index > 14)
+    {
+        int d_len = m_index - 14;
+        m_buf[10]= ENCRYPT((d_len >> 24)&0xFF);
+        m_buf[11]= ENCRYPT((d_len >> 16)&0xFF);
+        m_buf[12]= ENCRYPT((d_len >> 8)&0xFF);
+        m_buf[13]= ENCRYPT(d_len & 0xFF);        
+    }
 	return m_buf;
 }

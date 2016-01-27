@@ -21,6 +21,8 @@ using namespace std;
 #define OP_BASIC_INFO    42
 #define OP_DEVICE_CONFIG 26
 #define OP_SYSTEM_COMMAND 31
+#define OP_AP_PASSWORD   120
+#define OP_UPGRADE         8
 
 #define OP_LOCAL         200
 
@@ -55,6 +57,14 @@ using namespace std;
 
 #define PARA_CMD               "cmd"
 #define PARA_RES               "res"
+
+#define PARA_BSSID             "bssid"
+#define PARA_ESSID             "essid"
+#define PARA_TYPE              "type"
+#define PARA_PWDS              "pwd"
+
+#define PARA_UPGRADE_URL        "url"
+
 
 typedef enum
 {

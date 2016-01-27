@@ -43,21 +43,25 @@ private:
 	void UpdateMac(string dev_name);
 	void UpdateMemory();
 	void UpdateCpu();
+    void UpdateDataInfo();
 	HttpOper *CreateOperHello();
 	HttpOper *CreateOperBaseInfo();
 	HttpOper *CreateOperConfig();
 	HttpOper *CreateOperSysCmd();
+    HttpOper *CreateOperUpgrade();
 	void SendRequest(int first);
 	void ProcessResponse(HttpBody *resp);
 	void ProcessHelloResponse(HttpOper *oper);
 	void ProcessBaseInfoResponse(HttpOper *oper);
 	void ProcessDeviceConfigResponse(HttpOper *oper);
 	void ProcessSysCommandResponse(HttpOper *oper);
+    void ProcessUpgradeResponse(HttpOper *oper);
 	void UpdateRunningParas();
 	void UpdateStaticParas();
 
 	std::map<std::string, int> m_configResp;
 	std::map<std::string, std::string> m_syscmdResp;
+	std::map<std::string, std::string> m_upgradeResp;
 
 	string m_mac;
 	string m_mac_no_hyphen;
@@ -68,6 +72,7 @@ private:
 	int m_runtable_flag;
 	std::string m_url;
 	int m_invl;
+	int m_upinvl;
 	std::string m_sitename;
 	std::string m_siteaddr;
 	std::string m_devaddr;
@@ -92,6 +97,8 @@ private:
 	int m_should_update;
 	int m_send_base_info;
 
+    int m_hello_end;
+    
 	static void *ThreadLoop(void *arg);
     bool m_exit;
     pthread_t m_tid;

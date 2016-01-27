@@ -1,10 +1,12 @@
 #include "ScanRecord.h"
 #include "LogUtility.h"
+#include "DataChannel.h"
 
 ScanRecordHash::ScanRecordHash(RecordHashGenerator *hashkey, unsigned int bucket_size)
 	: m_table(bucket_size), m_hashkey(hashkey)
 {
 	m_number = 0;
+    m_first = 0;
 	for(int i = 0; i < m_table.size(); i ++)
 		INIT_LIST_HEAD(&m_table[i]);
 
@@ -57,6 +59,9 @@ int ScanRecordHash::AddRecord(struct list_head *rec)
 	{
 		list_add(rec, head);
 		m_number ++;
+        if(m_first== 0)
+            DATA_INSTANCE->FirstSendData();
+        m_first = 1;
 	}
 
 	pthread_mutex_unlock(&m_mutex);
@@ -86,16 +91,16 @@ void ScanRecordHash::DeleteRecord(struct list_head *rec)
 	m_hashkey->Free(rec);
 }
 
-void ScanRecordHash::DumpRecord(int clean)
+int ScanRecordHash::DumpRecord(int clean)
 {
 	LogUtility::Log(LOG_LEVEL_DEBUG, "ScanRecordHash DumpRecord number=%d",m_number);
 	pthread_mutex_lock(&m_mutex);
 	if((m_number <= 0) || (m_hashkey->PrepareBuffer(m_number) < 0))
 	{
 		pthread_mutex_unlock(&m_mutex);
-		return;
+		return 0;
 	}
-
+    int ret = m_number;
 	for(int i = 0; i < m_table.size(); i ++)
 	{
 		struct list_head *head = &m_table[i];
@@ -110,4 +115,5 @@ void ScanRecordHash::DumpRecord(int clean)
 	}
 	m_number = 0;
 	pthread_mutex_unlock(&m_mutex);
+    return ret;
 }

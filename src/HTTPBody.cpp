@@ -45,6 +45,8 @@ static void _init_supported_paras()
 
 	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_CMD, HTTP_PARA_TYPE_STRING));
 	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_RES, HTTP_PARA_TYPE_STRING));
+
+	_supportedParas.insert(HttpParaTypeMap::value_type(PARA_UPGRADE_URL, HTTP_PARA_TYPE_STRING));
 }
 
 HttpPara *HttpPara::CreatePara(string para)

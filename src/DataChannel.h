@@ -21,6 +21,10 @@ public:
 	void Stop();
 	void RunningTableUpdated();
 	void HandleTimer(std::string &name, void *data);
+	int GetStartTime();
+	int GetEndTime();
+	int GetSendNum();
+	void FirstSendData();
 
 protected:
 	DataChannel();
@@ -44,6 +48,10 @@ private:
 
     int m_should_update;
     int m_should_send;
+    
+    int m_start_time;
+    int m_end_time;
+    int m_number;
 
     int m_socket;
 

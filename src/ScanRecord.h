@@ -22,7 +22,7 @@ public:
 	ScanRecordHash(RecordHashGenerator *hashkey, unsigned int bucket_size = 256);
 	~ScanRecordHash();
 	int AddRecord(struct list_head *rec);
-	void DumpRecord(int clean);
+	int DumpRecord(int clean);
 
 protected:
 	void Clear();
@@ -34,6 +34,7 @@ private:
 	RecordHashGenerator *m_hashkey;
 	pthread_mutex_t m_mutex;
 	int m_number;
+    int m_first;
 };
 
 #endif

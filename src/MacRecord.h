@@ -11,6 +11,10 @@ typedef struct
 	char max_signal;
 	char latest_signal;
 	time_t time;
+	unsigned char bssid[6];	
+	unsigned char essid[64];
+	unsigned char channel;
+	unsigned char security[2];
 }MacRecord;
 
 struct MacRecordNode
@@ -22,7 +26,10 @@ struct MacRecordNode
 #define MAC_RECORD_TABLE MacRecordTable::Instance()
 
 #define MAC_HEAD_LENGTH       14
-#define MAC_RECORD_LENGTH     16
+#define MAC_RECORD_LENGTH     118
+
+#define NULL_MAC  (unsigned char*)"\x00\x00\x00\x00\x00\x00"
+#define BROADCAST (unsigned char*)"\xFF\xFF\xFF\xFF\xFF\xFF"
 
 class MacRecordTable : public RecordHashGenerator
 {
@@ -31,7 +38,7 @@ public:
 	static void Destroy();
 
 	void UpdateMacRecord(MacRecord *rec);
-	unsigned char *GetRecord(int &len);
+	unsigned char *GetRecord(int &len, int &num);
 
 	unsigned int GetHash(struct list_head *rec, int bucket_size);
 	int IsKeySame(struct list_head *rec1, struct list_head *rec2);

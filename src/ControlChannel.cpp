@@ -68,12 +68,14 @@ ControlChannel::ControlChannel()
 
 	m_runtable_flag = 0;
 	m_invl = 300;
+	m_upinvl = 300;
 	UpdateRunningParas();
 	UpdateStaticParas();
 
+    m_hello_end = (int)time(NULL) + m_invl;
 	m_helloTimer = NULL;
 	m_rebootTimer = NULL;
-	ChangeHelloInvl(m_invl, 0);
+	//ChangeHelloInvl(m_invl, 0);
 	m_exit = 0;
 
 	pthread_mutex_init(&m_mutex, NULL);
@@ -82,7 +84,7 @@ ControlChannel::ControlChannel()
 
 ControlChannel::~ControlChannel()
 {
-	DestroyTimer(m_helloTimer);
+	//DestroyTimer(m_helloTimer);
 	DestroyTimer(m_rebootTimer);
 	Stop();
 	pthread_mutex_destroy(&m_mutex);
@@ -112,10 +114,10 @@ void ControlChannel::Stop()
 {
     if(m_exit != true)
     {
-    	pthread_mutex_lock(&m_mutex);
+    	//pthread_mutex_lock(&m_mutex);
         m_exit = true;
-        pthread_cond_signal(&m_cond);
-        pthread_mutex_unlock(&m_mutex);
+        //pthread_cond_signal(&m_cond);
+        //pthread_mutex_unlock(&m_mutex);
         pthread_join(m_tid, NULL);
     }
 
@@ -125,20 +127,27 @@ void ControlChannel::Stop()
 void *ControlChannel::ThreadLoop(void *arg)
 {
 	ControlChannel *controlChannel = reinterpret_cast<ControlChannel *> (arg);
-
-	StartTimer(controlChannel->m_helloTimer);
+    int itime = 0;
+	//StartTimer(controlChannel->m_helloTimer);
 
 	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel starting...");
 
 	controlChannel->SendRequest(1);
 	while(1)
 	{
-		pthread_mutex_lock(&controlChannel->m_mutex);
-		if(!controlChannel -> m_exit && !controlChannel->m_should_send)
-			pthread_cond_wait(&controlChannel->m_cond, &controlChannel->m_mutex);
-		if(controlChannel->m_exit)
+		sleep(1);
+		//pthread_mutex_lock(&controlChannel->m_mutex);
+		//if(!controlChannel -> m_exit && !controlChannel->m_should_send)
+		//	pthread_cond_wait(&controlChannel->m_cond, &controlChannel->m_mutex);
+        itime = (int)time(NULL);
+        if(itime >= controlChannel->m_hello_end)
+        {
+            controlChannel->m_should_send = 1;
+            controlChannel->m_hello_end = itime + controlChannel->m_invl;
+        }
+        if(controlChannel->m_exit)
 		{
-			pthread_mutex_unlock(&controlChannel->m_mutex);
+			//pthread_mutex_unlock(&controlChannel->m_mutex);
 			break;
 		}
 
@@ -151,13 +160,13 @@ void *ControlChannel::ThreadLoop(void *arg)
 		if(controlChannel->m_should_send)
 		{
 			controlChannel->m_should_send = 0;
-			pthread_mutex_unlock(&controlChannel->m_mutex);
+			//pthread_mutex_unlock(&controlChannel->m_mutex);
 			controlChannel->SendRequest(0);
 		}
 		else
-			pthread_mutex_unlock(&controlChannel->m_mutex);
+			; //pthread_mutex_unlock(&controlChannel->m_mutex);
 	}
-	StopTimer(controlChannel->m_helloTimer);
+	//StopTimer(controlChannel->m_helloTimer);
 	pthread_exit(NULL);
 }
 
@@ -167,6 +176,7 @@ void ControlChannel::SendRequest(int first)
 	HttpOper *base_info = NULL;
 	HttpOper *config = NULL;
 	HttpOper *scmd  = NULL;
+	HttpOper *upgrade  = NULL;
 	HttpBody http_body;
 	unsigned short response_status;
 	std::string response_body;
@@ -194,6 +204,11 @@ void ControlChannel::SendRequest(int first)
 		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel create system command oper");
 		scmd = CreateOperSysCmd();
 	}
+	if(m_upgradeResp.size())
+	{
+		LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel create upgrade oper");
+		upgrade = CreateOperUpgrade();
+	}
 	http_body.AddOper(hello);
 	if(base_info)
 		http_body.AddOper(base_info);
@@ -201,7 +216,9 @@ void ControlChannel::SendRequest(int first)
 		http_body.AddOper(config);
 	if(scmd)
 		http_body.AddOper(scmd);
-
+	if(upgrade)
+		http_body.AddOper(upgrade);
+    
 	http::client::options options;
 	options.timeout(10);
 	http::client client(options);
@@ -268,6 +285,9 @@ void ControlChannel::ProcessResponse(HttpBody *resp)
 		case OP_SYSTEM_COMMAND:
 			ProcessSysCommandResponse(oper);
 			break;
+        case OP_UPGRADE:
+            ProcessUpgradeResponse(oper);
+            break;
 		}
 	}
 }
@@ -289,13 +309,14 @@ void ControlChannel::ProcessHelloResponse(HttpOper *oper)
 		else if(!name.compare(PARA_INVL))
 		{
 			int invl = GetHttpParaValueInt(para->GetValue());
-			if((invl > 10) && (invl < 3600))
+			if((invl != m_invl) && (invl > 10) && (invl < 3600))
 			{
 				RunningConfigTable table;
 				table.SetInvl(invl);
 				table.Commit();
 				m_invl = invl;
-				ChangeHelloInvl(invl, 1);
+                m_hello_end = (int)time(NULL) + m_invl;
+				//ChangeHelloInvl(invl, 1);
 			}
 		}
 		itr ++;
@@ -459,6 +480,33 @@ void ControlChannel::ProcessSysCommandResponse(HttpOper *oper)
 	return;
 
 }
+void ControlChannel::ProcessUpgradeResponse(HttpOper *oper)
+{
+	HttpParaMap *paras = oper->GetParas();
+	HttpParaMap::iterator itr = paras->begin();
+	LogUtility::Log(LOG_LEVEL_DEBUG, "ControlChannel ProcessOpUpgradeResponse...");
+    m_upgradeResp.clear();
+
+	while(itr != paras->end())
+	{
+		HttpPara *para = (HttpPara *)itr->second;
+		std::string name = para->GetName();
+		if(!name.compare(PARA_UPGRADE_URL))
+		{
+			std::string url = "";
+			GetHttpParaValueString(para->GetValue(), url);
+			if(!url.empty())
+			{
+                m_upgradeResp.insert(std::map<std::string, std::string>::value_type(name, url));
+                m_upgradeResp.insert(std::map<std::string, std::string>::value_type(PARA_RES, "0"));
+    			m_should_send = 1;
+			}
+		}
+		itr ++;
+	}
+
+	return;
+}
 
 void ControlChannel::UpdateMac(std::string dev_name)
 {
@@ -587,6 +635,31 @@ void ControlChannel::UpdateCpu()
     return;
 }
 
+void ControlChannel::UpdateDataInfo()
+{
+    int stime = 0, etime = 0, itime = 0;
+
+    itime = (int)time(NULL);
+    stime = DATA_INSTANCE->GetStartTime();
+    etime = DATA_INSTANCE->GetEndTime();
+    m_mac_count = DATA_INSTANCE->GetSendNum();
+    if(stime == 0)
+    {
+        stime = itime;
+        etime = itime + m_upinvl;
+    }
+    if(m_upinvl >= m_invl)
+    {
+        if(((itime-m_invl) > stime) && (itime < etime))
+            m_mac_count = 0;
+    }
+
+    m_start_time = GetTime(stime, 0, 1);
+    m_end_time = GetTime(etime, 0, 1);
+
+    return;
+}
+
 HttpOper *ControlChannel::CreateOperHello()
 {
 	HttpOper *hello = new HttpOper(OP_HEARTBEAT);
@@ -595,6 +668,7 @@ HttpOper *ControlChannel::CreateOperHello()
 	if(!hello)
 		return NULL;
 
+	UpdateDataInfo();
 	UpdateMemory();
 	UpdateCpu();
 
@@ -688,16 +762,40 @@ HttpOper *ControlChannel::CreateOperSysCmd()
 	return scmd;
 }
 
+HttpOper *ControlChannel::CreateOperUpgrade()
+{
+	HttpOper *upgrade = NULL;
+	HttpPara *para;
+	std::map<std::string, std::string>::iterator itr = m_upgradeResp.begin();
+
+	while(itr != m_upgradeResp.end())
+	{
+		std::string name = (std::string)itr->first;
+		std::string value = (std::string)itr->second;
+		if(!upgrade) {
+			upgrade = new HttpOper(OP_UPGRADE);
+			if(!upgrade)
+				break;
+		}
+		upgrade->AddPara(name, value);
+		itr ++;
+	}
+
+	m_upgradeResp.clear();
+
+	return upgrade;
+}
+
 void ControlChannel::HandleTimer(std::string &name, void *data)
 {
 	if(name == HELLO_TIMER_NAME)
 	{
 	    if(!m_should_send)
 	    {
-	    	pthread_mutex_lock(&m_mutex);
+	    	//pthread_mutex_lock(&m_mutex);
 	    	m_should_send = 1;
-	        pthread_cond_signal(&m_cond);
-	        pthread_mutex_unlock(&m_mutex);
+	        //pthread_cond_signal(&m_cond);
+	        //pthread_mutex_unlock(&m_mutex);
 	    }
 	}
 	else if(name == REBOOT_TIMER_NAME)
@@ -719,6 +817,7 @@ void ControlChannel::UpdateRunningParas()
 	running_table.GetAppLon(m_lon);
 	running_table.GetAppLat(m_lat);
 	running_table.GetInvl(m_invl);
+	running_table.GetUpInvl(m_upinvl);
 
 	trim(m_url);
 	if(m_url.find("http://") == std::string::npos)
@@ -743,8 +842,8 @@ void ControlChannel::RunningTableUpdated()
 {
 	m_should_update = 1;
 	m_send_base_info = 1;
-	pthread_mutex_lock(&m_mutex);
+	//pthread_mutex_lock(&m_mutex);
 	m_should_send = 1;
-	pthread_cond_signal(&m_cond);
-	pthread_mutex_unlock(&m_mutex);
+	//pthread_cond_signal(&m_cond);
+	//pthread_mutex_unlock(&m_mutex);
 }

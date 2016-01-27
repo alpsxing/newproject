@@ -56,6 +56,9 @@ DataChannel::DataChannel()
 	m_should_update = 0;
 	m_should_send = 0;
 	m_exit = 0;
+	m_start_time = 0;
+	m_end_time = 0;
+	m_number = 0;
 
 	m_socket = -1;
 
@@ -65,7 +68,7 @@ DataChannel::DataChannel()
 
 DataChannel::~DataChannel()
 {
-	DestroyTimer(m_txTimer);
+	//DestroyTimer(m_txTimer);
     Stop();
     pthread_mutex_destroy(&m_mutex);
     pthread_cond_destroy(&m_cond);
@@ -85,10 +88,10 @@ void DataChannel::Stop()
 {
     if(m_exit != true)
     {
-    	pthread_mutex_lock(&m_mutex);
+    	//pthread_mutex_lock(&m_mutex);
         m_exit = true;
-        pthread_cond_signal(&m_cond);
-        pthread_mutex_unlock(&m_mutex);
+        //pthread_cond_signal(&m_cond);
+        //pthread_mutex_unlock(&m_mutex);
         pthread_kill(m_tid, SIGUSR1);
         pthread_join(m_tid, NULL);
     }
@@ -98,10 +101,14 @@ void DataChannel::Stop()
 
 void DataChannel::UpdateTxTimer(int invl)
 {
+    /*
 	if(m_txTimer)
 		DestroyTimer(m_txTimer);
 	m_txTimer = CreateTimer(TX_TIMER_NAME, TIMER_SEC_TO_MSEC(invl), this, DataChannelTimerHandler, true);
 	StartTimer(m_txTimer);
+    */
+    m_start_time = (int)time(NULL);
+    m_end_time = m_start_time + invl;
 }
 
 static void SignalHandler(int sig)
@@ -119,18 +126,27 @@ void *DataChannel::ThreadLoop(void *arg)
 
     signal(SIGUSR1,SignalHandler);
     signal(SIGPIPE,SignalHandler);
-
+    int itime=0;
 	while(1)
 	{
-		pthread_mutex_lock(&dataChannel->m_mutex);
-		if(!dataChannel -> m_exit &&
-		   !dataChannel->m_should_send &&
-		   !dataChannel->m_should_update)
-			pthread_cond_wait(&dataChannel->m_cond, &dataChannel->m_mutex);
+	     sleep(1);
+		//pthread_mutex_lock(&dataChannel->m_mutex);
+		//if(!dataChannel -> m_exit &&
+		//   !dataChannel->m_should_send &&
+		//   !dataChannel->m_should_update)
+		//	pthread_cond_wait(&dataChannel->m_cond, &dataChannel->m_mutex);
+
+         itime = (int)time(NULL);
+         if(itime >= dataChannel->m_end_time)
+         {
+                dataChannel->m_should_send = 1;
+                dataChannel->m_start_time = itime;
+                dataChannel->m_end_time =  dataChannel->m_start_time + dataChannel->m_invl;
+         }
 
 		if(dataChannel->m_exit)
 		{
-			pthread_mutex_unlock(&dataChannel->m_mutex);
+			//pthread_mutex_unlock(&dataChannel->m_mutex);
 			break;
 		}
 
@@ -144,33 +160,35 @@ void *DataChannel::ThreadLoop(void *arg)
 		{
 			dataChannel->m_should_send = 0;
 			//dataChannel->UpdateTxTimer(dataChannel->m_invl);
-			pthread_mutex_unlock(&dataChannel->m_mutex);
+			//pthread_mutex_unlock(&dataChannel->m_mutex);
 			if(dataChannel->Connect() < 0)
 			{
+				dataChannel->m_number = 0;
 				LogUtility::Log(LOG_LEVEL_WARN, "DataChannel connect failed");
 				//dataChannel->UpdateTxTimer(10);
 				continue;
 			}
 			if(dataChannel->Send()< 0)
 			{
+				dataChannel->m_number = 0;
 				LogUtility::Log(LOG_LEVEL_WARN, "DataChannel send failed");
 				//dataChannel->UpdateTxTimer(10);
 			}
 			dataChannel->Close();
 		}
 		else
-			pthread_mutex_unlock(&dataChannel->m_mutex);
+			; //pthread_mutex_unlock(&dataChannel->m_mutex);
 	}
-	StopTimer(dataChannel->m_txTimer);
+	//StopTimer(dataChannel->m_txTimer);
 	pthread_exit(NULL);
 }
 
 void DataChannel::RunningTableUpdated()
 {
-	pthread_mutex_lock(&m_mutex);
+	//pthread_mutex_lock(&m_mutex);
 	m_should_update = 1;
-    pthread_cond_signal(&m_cond);
-    pthread_mutex_unlock(&m_mutex);
+    //pthread_cond_signal(&m_cond);
+    //pthread_mutex_unlock(&m_mutex);
 }
 
 void DataChannel::UpdateRunningParas()
@@ -221,10 +239,12 @@ void DataChannel::HandleTimer(std::string &name, void *data)
 	{
 	    if(!m_should_send)
 	    {
-	    	pthread_mutex_lock(&m_mutex);
+	    	//pthread_mutex_lock(&m_mutex);
 	    	m_should_send = 1;
-	        pthread_cond_signal(&m_cond);
-	        pthread_mutex_unlock(&m_mutex);
+	        //pthread_cond_signal(&m_cond);
+	        //pthread_mutex_unlock(&m_mutex);
+            m_start_time = (int)time(NULL);
+            m_end_time =  m_start_time + m_invl;
 	    }
 	}
 }
@@ -339,12 +359,12 @@ int DataChannel::Send()
 {
     int totalSent = 0;
     unsigned char *buf;
-	int len;
+	int len, num;
 	int ret;
 
     LogUtility::Log(LOG_LEVEL_DEBUG, "DataChannel::Send.");
 
-    buf = MAC_RECORD_TABLE->GetRecord(len);
+    buf = MAC_RECORD_TABLE->GetRecord(len, num);
     if(!buf || len <= 0)
     {
     	LogUtility::Log(LOG_LEVEL_DEBUG, "DataChannel::Send get record failed.");
@@ -376,8 +396,27 @@ int DataChannel::Send()
 		    totalSent += ret;
 	    }
     }while(totalSent < len);
-    
-    LogUtility::Log(LOG_LEVEL_DEBUG, "DataChannel::Send totallen %d.", totalSent);
+    m_number = num;
+    LogUtility::Log(LOG_LEVEL_DEBUG, "DataChannel::Send totallen %d, num %d.", totalSent, m_number);
 
     return totalSent;
+}
+int DataChannel::GetStartTime()
+{
+    return m_start_time;
+}
+int DataChannel::GetEndTime()
+{
+    return m_end_time;
+}
+int DataChannel::GetSendNum()
+{
+    return m_number;
+}
+void DataChannel::FirstSendData()
+{
+	//pthread_mutex_lock(&m_mutex);
+	m_should_send = 1;
+    //pthread_cond_signal(&m_cond);
+    //pthread_mutex_unlock(&m_mutex);
 }
