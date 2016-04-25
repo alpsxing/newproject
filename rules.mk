@@ -44,7 +44,13 @@ CC=$(TOOLS_DIR)/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux/bin/arm-linux-g
 CXX=$(TOOLS_DIR)/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux/bin/arm-linux-gnueabihf-g++
 NETLIBDIR=arm-linux-gnueabihf
 else
+ifeq ($(ARCH), arm)
+CC=arm-linux-gcc
+CXX=arm-linux-g++
+NETLIBDIR=arm
+else
 $(error $(ARCH) is not supported yet.)
+endif
 endif
 endif
 endif

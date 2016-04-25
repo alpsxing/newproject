@@ -12,6 +12,11 @@ For bbb:
 2. ARCH=bbb make
 3. make install
 
+For arm:
+1. cd newproject/src
+2. ARCH=arm make
+3. make install
+
 All the running fils and environments are located at newproject/install directory.
 
 HOW TO RUN

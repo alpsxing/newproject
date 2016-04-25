@@ -126,6 +126,9 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
 make
 make install
 
+*  If build for arm, some files in example might fail. Edit CMakeLists.txt, and change the option for CPP-NETLIB_BUILD_EXAMPLES to OFF.
+*  Remove files under cpp-netlib-build and make again.
+
 5. libnl
 ./configure --prefix=<dir> --host=arm-linux-gnueabihf
 make
@@ -137,3 +140,6 @@ export PKG_CONFIG_PATH=<openssl lib pkgconfig path>:<libnl lib pkgconfig path>
 TOOL_PREFIX=arm-linux-gnueabihf-  make
 ./install.sh <installdir>
 
+* If build for arm, build might complain for not finding libssp.
+* Edit common.mak, and remove the lines that have -fstack-protector.
+* make clean, and make again.
