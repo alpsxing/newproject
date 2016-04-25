@@ -91,4 +91,4 @@
 # Configure specific Python version.
 # using python : 3.1 : /usr/bin/python3 : /usr/include/python3.1 : /usr/lib ;
 
-using gcc : arm : arm-linux-gnueabi-g++ ;
+using gcc : arm : arm-linux-g++ ;
