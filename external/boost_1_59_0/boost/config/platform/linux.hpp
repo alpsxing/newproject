@@ -47,6 +47,13 @@
 #endif
 
 //
+// uClibc has no support for fenv.h
+//
+#if defined(__UCLIBC__)
+#  define BOOST_NO_FENV_H
+#endif
+
+//
 // If glibc is past version 2 then we definitely have
 // gettimeofday, earlier versions may or may not have it:
 //
